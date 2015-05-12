@@ -1,5 +1,6 @@
 #!/bin/sh
 
+sudo aptitude install git sbcl mplayer sox
 git clone https://github.com/SvenMichaelKlose/tre
 git clone https://github.com/SvenMichaelKlose/bender
 git clone https://github.com/SvenMichaelKlose/nipkow
