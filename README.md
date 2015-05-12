@@ -1,4 +1,23 @@
-# Tape audio player expained
+# Overview
+
+This a real–time multimedia tape player for the unexpanded Commodore
+VIC-20.  It plays pulse–width modulated audio from tape which you may
+stop, resume, rewind or fast-forward like a regular music cassette.
+
+The output is roughly four bits as ~4kHz sampling rate.
+
+To record the TAPs on real cassettes you should use a real machine that
+writes the tape or the signal will be degraded.  Software to do this
+isn't avaible from me, yet.
+
+
+# Download and build on Linux
+
+You'll need at least git and sbcl installed.  Then download
+'download-and-build.sh' and execute it.
+
+
+# How it works
 
 This is taken from a posting in the VIC-20 Denial forum at
 http://sleepingelephant.com/denial/
