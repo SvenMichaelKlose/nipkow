@@ -1,8 +1,18 @@
+(defvar *video?* nil)
+
+(defvar audio_shortest_pulse #x18)
+(defvar audio_longest_pulse #x28)
+(defvar frame_sync_width #x08)
+(defvar audio_pulse_width (- audio_longest_pulse audio_shortest_pulse))
+
 (defvar *pulse-short* #x20)
 (defvar *pulse-long* #x40)
 (defvar *tape-pulse* (* 8 (+ *pulse-short* (half (- *pulse-long* *pulse-short*)))))
 (load "src/wav2pwm.lisp")
-(load "src/make-video.lisp")
+(load "src/make-nipkow-dat.lisp")
+
+(when *video?*
+  (sb-ext:run-program "mplayer" '("-ao" "dummy" "-vo" "pnm" "-vf" "scale=64:48" "-endpos" "120" "video.mp4")))
 
 (defun make-wav (name file gain bass)
   (sb-ext:run-program "/usr/bin/mplayer"
@@ -86,6 +96,6 @@
 (alet (+ *pulse-short* (half (- *pulse-long* *pulse-short*)))
   (format t "Baud rates: ~A (NTSC), ~A (PAL)~%"
           (tap-rate :ntsc !) (tap-rate :pal !)))
-(format t "Done making 'Pulse'. See directory 'compiled/'.~%")
+(format t "Done. See directory 'compiled/'.~%")
 
 (quit)
