@@ -29,15 +29,15 @@
                                   (elt ! (+ ofs 10))
                                   (elt ! (+ ofs 11)))
                                3 4 16))
+              (= v (unclip v 14))
               (when (< 15 v)
                 (error "Luminance of ~A.~%" v))
               (when (< v 0)
                 (error "Luminance of ~A.~%" v))
-              (= v (unclip v 12))
               (princ (code-char (+ audio_shortest_pulse
                                    (? phase
-                                      (- 15 v)
-                                      v)))
+                                      v
+                                      (- 15 v))))
                      out)
               (toggle phase))))))))
 
