@@ -45,12 +45,10 @@ l:  sta colors,x
     ldx #63
 l:  lda luminances,x
     sta $1400,x
-    lda #0
-    sta $1478,x
     iny
     dex
     bpl -l
-    ldx #55
+    ldx #63
     ldy #64
 l:  lda luminances,x
     eor #$ff
@@ -80,6 +78,10 @@ l:  lda luminances,x
     ldx #15
 l:  txa
     sta screen,x
+    lda #15
+    sec
+    sbc screen,x
+    sta @(+ 16 screen),x
     dex
     bpl -l
 
@@ -129,9 +131,9 @@ n:
 
     ; Adjust timer if average pulse length isn't centered.
     lda @(++ average)   ; average / 256
-    tax
     cmp #$40
     beq +j              ; It's already what we want…
+    tax
     bcc +n
     dec current_low
     bne +d
@@ -151,17 +153,18 @@ j:  asl
 
 play_video:
     ; Wait for end of pulse.
-    lda $9121   ; Reset the VIA2 CA1 status bit.
-l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
-    lsr         ; (2) Shift to test bit 2.
-    lsr         ; (2)
-    bcc -l      ; (2/3) Nothing happened yet. Try again…
+    lda $9121       ; Reset the VIA2 CA1 status bit.
+l:  lda $912d       ; Read the VIA2 CA1 status bit.
+    lsr             ; Shift to test bit 2.
+    lsr
+    bcc -l          ; Nothing happened yet. Try again…
 
     ; Get sample.
-    ldx $9124   ; (4) Read the timer's low byte which is your sample.
-    lda $9125   ; (4) Read the timer's high byte.
-    sty $9125   ; (4) Restart timer and acknowledge interrupt.
+    ldx $9124       ; Read the timer's low byte which is your sample.
+    lda $9125       ; Read the timer's high byte.
+    sty $9125       ; Restart timer and acknowledge interrupt.
     bmi framesync
+    stx tmp
     lda downsamples,x
     tax
 
@@ -176,14 +179,50 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
 p:  stx $1e00       ; Save as luminance char.
     inc @(++ -p)    ; Step to next pixel.
 
+    ; Make sum of samples.
+    lda tmp
+    clc
+    adc average
+    sta average
+    bcc +n
+    inc @(++ average)
+n:
+
+    ; Check if sum is complete.
+    dec tleft
+    bne play_audio2     ; No, continue with video…
+
+    ; Adjust timer if average pulse length isn't centered.
+    lda @(++ average)   ; average / 256
+    cmp #$40
+    beq +j              ; It's already what we want…
+    tax
+    bcc +n
+    dec current_low
+    bne +d
+n:  inc current_low
+d:  lda current_low
+    sta $9124
+
+    ; Divide average by 128 and restart summing up samples.
+    txa
+j:  asl
+    sta average
+    lda #0
+    rol
+    sta @(++ average)
+    lda #128
+    sta tleft
+
     jmp play_audio
 
     ; Start new frame.
 framesync:
     lda #0
     sta @(++ -p)
+play_audio2:
     jmp play_audio
 
 downsamples:    @(maptimes [integer (/ _ 8)] 128)
-                fill 128
+                @(maptimes [identity 15] 128)
 inversions:     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
