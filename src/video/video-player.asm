@@ -1,11 +1,11 @@
+; nipkow – Copyright (c) 2015 Sven Michael Klose <pixel@hugbox.org>
+
 current_low = 0
 average = 1
 tleft = 3
-luminance_phase = 4
-tmp = 5
-tmp2 = 6
+tmp = 4
 
-desired_average = $40
+desired_average = $44
 average_loop_cycles = @(half (+ 4 2 2 3))
 sure_delay = 12
 reset_delay = @(+ average_loop_cycles sure_delay)
@@ -35,6 +35,9 @@ tape_audio_player:
 
     ; Set colors to white.
     ldx #0
+    stx tleft
+    stx average
+    stx @(++ average)
     lda #white
 l:  sta colors,x
     sta @(+ 203 colors),x
@@ -63,6 +66,7 @@ l:  lda luminances,x
     lda #<timer
     sta current_low
     ldy #>timer
+    sty $9125
 
 play_audio:
     ; Wait for end of pulse.
@@ -77,7 +81,8 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     ldx $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer and acknowledge interrupt.
     bmi framesync
-audio_out:
+
+    ; Downsample and play.
     tax
     lsr         ; (2) Reduce sample from 7 to 4 bits.
     lsr         ; (2)
@@ -103,9 +108,9 @@ n:
     cmp #desired_average
     beq +j              ; It's already what we want…
     bcc +n
-    inc current_low
+    dec current_low
     bne +d
-n:  dec current_low
+n:  inc current_low
 d:  lda current_low
     sta $9124
 
@@ -132,31 +137,25 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     ldx $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer.
     bmi framesync
-video_out:
-    sta tmp2
+    sta tmp
     lsr         ; (2) Reduce sample from 7 to 4 bits.
     lsr         ; (2)
     lsr         ; (2)
+    tax
 
     ; Invert every second luminance value.
-    ldx luminance_phase
-    beq +p
-    sta tmp
-    lda #15
-    sec
-    sbc tmp
+    lda @(++ +p)
+    lsr
+    bcc +p
+    lda inversions,x
+    tax
 
     ; Draw luminance pixel.
-p:  sta $1e00       ; Save as luminance char.
+p:  stx $1e00       ; Save as luminance char.
     inc @(++ -p)    ; Step to next pixel.
 
-    ; Toggle luminance phase.
-    lda luminance_phase
-    eor #1
-    sta luminance_phase
-
     ; Make sum of samples.
-    lda tmp2
+    lda tmp
     clc
     adc average
     sta average
@@ -174,9 +173,9 @@ n:
     cmp #desired_average
     beq +j              ; It's already what we want…
     bcc +n
-    inc current_low
+    dec current_low
     bne +d
-n:  dec current_low
+n:  inc current_low
 d:  lda current_low
     sta $9124
 
@@ -196,7 +195,8 @@ play_audio2:
 framesync:
     ; Reset pixel pointer.
     lda #0
-    sta luminance_phase
-    sta @(+ -p 1)
-    inc $900f
+    sta @(++ -p)
     jmp play_audio
+
+inversions:
+    15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 0
