@@ -33,7 +33,7 @@
                 (error "Luminance of ~A.~%" v))
               (when (< v 0)
                 (error "Luminance of ~A.~%" v))
-              (= v (unclip v))
+              (= v (unclip v 12))
               (princ (code-char (+ audio_shortest_pulse
                                    (? phase
                                       (- 15 v)
