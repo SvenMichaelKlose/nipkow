@@ -6,10 +6,7 @@ tleft = 3
 tmp = 4
 
 desired_average = $40
-average_loop_cycles = @(half (+ 4 2 2 3))
-sure_delay = 12
-reset_delay = @(+ average_loop_cycles sure_delay)
-timer = @(- (* 8 audio_longest_pulse) reset_delay)
+timer = @(* 8 audio_longest_pulse)
 
 tape_audio_player:
     ; Disable interrupts.
@@ -188,8 +185,6 @@ framesync:
     sta @(++ -p)
     jmp play_audio
 
-inversions:
-    15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
-
-downsamples:
-@(maptimes [integer (/ _ 8)] 256)
+inversions:     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+downsamples:    @(maptimes [integer (/ _ 8)] 128)
+                fill 128

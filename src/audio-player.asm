@@ -3,9 +3,7 @@ average = 1
 tleft = 3
 
 desired_average = $40
-average_loop_cycles = @(half (+ 4 2 2 3))
-sure_delay = 7
-timer = @(- (* 8 audio_longest_pulse) average_loop_cycles sure_delay)
+timer = @(* 8 audio_longest_pulse)
 
 tape_audio_player:
     ; Disable interrupts.
@@ -69,8 +67,8 @@ d:  lda current_low
     sta $9124
 
     ; Divide average by 128 and restart summing up samples.
-j:  txa
-    asl
+    txa
+j:  asl
     sta average
     lda #0
     rol
