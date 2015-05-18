@@ -1,9 +1,11 @@
-(defvar *video?* "video.mp4")
+(defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
+
+(defvar *bandwidth* 8)
 
 (defvar audio_shortest_pulse #x18)
 (defvar audio_longest_pulse #x28)
-(defvar frame_sync_width #x10)
+(defvar frame_sync_width #x40)
 (defvar audio_pulse_width (- audio_longest_pulse audio_shortest_pulse))
 
 (defvar *pulse-short* #x20)
@@ -16,14 +18,16 @@
   (format t "Generating frame images of video ~A with mplayer…~%" *video?*)
   (| (file-exists? *video?*)
      (error "Couldn't find *VIDEO?* ~A." *video?*))
+  (when nil
   (sb-ext:run-program "/usr/bin/mplayer"
                       `("-ao" "dummy"
                         "-vo" "pnm"
                         "-vf" "scale=64:48"
                         "-endpos" ,*video-end*
                         ,*video?*))
+  )
   (format t "Generating tape frames…~%")
-  (make-nipkow-dat "obj/nipkow.dat" "."))
+  (make-nipkow-dat-test "obj/nipkow.dat" "."))
 
 (defun make-wav (name file gain bass)
   (format t "Generating uncompressed audio for ~A of file ~A with mplayer…~%" name file)
@@ -64,7 +68,7 @@
 
 (defun make (to files cmds)
   (apply #'assemble-files to files)
-  (make-vice-commands cmds))
+  (make-vice-commands cmds "break .framesync"))
 
 (defun make-ohne-dich-prg (name tv)
   (make (+ "obj/" name "_" tv ".prg")

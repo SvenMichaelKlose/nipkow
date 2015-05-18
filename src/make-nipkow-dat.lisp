@@ -44,14 +44,14 @@
          (= max i)))
     (format t "Contrast ~A/~A~%" min max)
     (frame-sync out)
-    (let phase 0
+    (let phase nil
       (dolist (i x)
-        (princ (code-char (alet i ;(+ 2 (* 12 (/ (- i min) (- max min))))
+        (princ (code-char (alet (unclip (* 16 (/ (- i min) (- max min))) *bandwidth*)
                             (prog1 (+ audio_shortest_pulse
-                                      (? (zero? (bit-and phase 2))
+                                      (? phase
                                          !
                                          (- 15 !)))
-                              (+! phase))))
+                              (toggle phase))))
                out)))))
 
 (defun make-nipkow-dat (pathname frames-path)

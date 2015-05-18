@@ -22,7 +22,7 @@
   (alet (fetch-file in-file)
     (dotimes (i (length !))
       (unless (zero? (mod i 2))
-        (let sample (unclip (/ (unsigned (elt ! i)) 16) 14)
+        (let sample (unclip (/ (unsigned (elt ! i)) 16) *bandwidth*)
           (& (| (< sample 0)
                 (< 15 sample))
              (error "Sample ~A." sample))
