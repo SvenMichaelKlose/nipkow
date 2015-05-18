@@ -15,13 +15,19 @@
 (defun unsigned (x)
   (+ x (? (< 127 x) -128 128)))
 
+(defun unclip (x)
+  (+ 1 (integer (* (/ x 16) 14))))
+
 (defun wav2pwm (out in-file &optional video)
   (alet (fetch-file in-file)
     (dotimes (i (length !))
       (unless (zero? (mod i 2))
-        (princ (code-char (+ audio_shortest_pulse
-                             (/ (* (unsigned (elt ! i)) audio_pulse_width) 256)))
-               out)
+        (let sample (unclip (/ (unsigned (elt ! i)) 16))
+          (& (| (< sample 0)
+                (< 15 sample))
+             (error "Sample ~A." sample))
+          (let pulse (+ audio_shortest_pulse sample)
+            (princ (code-char pulse) out)))
         (when (& *video?*
                  (peek-char video))
           (princ (read-char video) out))))))
