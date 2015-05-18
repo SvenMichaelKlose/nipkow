@@ -3,8 +3,8 @@ average = 1
 tleft = 3
 luminance_phase = 4
 tmp = 5
+tmp2 = 6
 
-;desired_average = $29 ; 41… why? Should be $40.
 desired_average = $40
 average_loop_cycles = @(half (+ 4 2 2 3))
 sure_delay = 12
@@ -20,9 +20,9 @@ tape_audio_player:
     sta $912d
 
     ; Initialize VIC.
-    lda #8              ; (horizontal origin)
+    lda #17             ; (horizontal origin)
     sta $9000
-    lda #28             ; (vertical origin)
+    lda #50             ; (vertical origin)
     sta $9001
     lda #@(+ 128 16)    ; (16 screen rows)
     sta $9002
@@ -98,7 +98,7 @@ n:
     bne play_video      ; No, continue with video…
 
     ; Correct time if average pulse length doesn't match our desired value.
-s:  lda @(++ average)   ; average / 256
+    lda @(++ average)   ; average / 256
     tax
     cmp #desired_average
     beq +j              ; It's already what we want…
@@ -133,6 +133,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     sty $9125   ; (4) Write high byte to restart the timer.
     bmi framesync
 video_out:
+    sta tmp2
     lsr         ; (2) Reduce sample from 7 to 4 bits.
     lsr         ; (2)
     lsr         ; (2)
@@ -147,12 +148,49 @@ video_out:
 
     ; Draw luminance pixel.
 p:  sta $1e00       ; Save as luminance char.
-    inc @(+ -p 1)   ; Step to next pixel.
+    inc @(++ -p)    ; Step to next pixel.
 
     ; Toggle luminance phase.
     lda luminance_phase
     eor #1
     sta luminance_phase
+
+    ; Make sum of samples.
+    lda tmp2
+    clc
+    adc average
+    sta average
+    bcc +n
+    inc @(++ average)
+n:
+
+    ; Check if sum is complete.
+    dec tleft
+    bne play_audio2     ; No, continue with video…
+
+    ; Correct time if average pulse length doesn't match our desired value.
+    lda @(++ average)   ; average / 256
+    tax
+    cmp #desired_average
+    beq +j              ; It's already what we want…
+    bcc +n
+    inc current_low
+    bne +d
+n:  dec current_low
+d:  lda current_low
+    sta $9124
+
+    ; Divide average by 128 and restart summing up samples.
+j:  txa
+    asl
+    sta average
+    lda #0
+    rol
+    sta @(++ average)
+    lda #128
+    sta tleft
+
+play_audio2:
     jmp play_audio  ; Back to audio…
 
 framesync:
