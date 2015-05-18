@@ -2,7 +2,6 @@ current_low = 0
 average = 1
 tleft = 3
 
-desired_average = $40
 timer = @(* 8 audio_longest_pulse)
 
 tape_audio_player:
@@ -57,7 +56,7 @@ n:  dec tleft
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
     tax
-    cmp #desired_average
+    cmp #$40
     beq +j              ; It's already what we want.
     bcc +n
     dec current_low

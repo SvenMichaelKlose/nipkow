@@ -5,7 +5,6 @@ average = 1
 tleft = 3
 tmp = 4
 
-desired_average = $40
 timer = @(* 8 audio_longest_pulse)
 
 tape_audio_player:
@@ -99,16 +98,16 @@ l:  txa
 
 play_audio:
     ; Wait for end of pulse.
-    lda $9121   ; Reset the VIA2 CA1 status bit.
-l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
-    lsr         ; (2) Shift to test bit 2.
-    lsr         ; (2)
-    bcc -l      ; (2/3) Nothing happened yet. Try again…
+    lda $9121       ; Reset the VIA2 CA1 status bit.
+l:  lda $912d       ; Read the VIA2 CA1 status bit.
+    lsr             ; Shift to test bit 2.
+    lsr
+    bcc -l          ; Nothing happened yet. Try again…
 
     ; Get sample.
-    ldx $9124   ; (4) Read the timer's low byte which is your sample.
-    lda $9125   ; (4) Read the timer's high byte.
-    sty $9125   ; (4) Restart timer and acknowledge interrupt.
+    ldx $9124       ; Read the timer's low byte which is your sample.
+    lda $9125       ; Read the timer's high byte.
+    sty $9125       ; Restart timer and acknowledge interrupt.
     bmi framesync
 
     ; Downsample and play.
@@ -116,7 +115,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     sta $900e
 
     ; Make sum of samples.
-    txa
+    txa             ; Add X to word average.
     clc
     adc average
     sta average
@@ -128,10 +127,10 @@ n:
     dec tleft
     bne play_video      ; No, continue with video…
 
-    ; Correct time if average pulse length doesn't match our desired value.
+    ; Adjust timer if average pulse length isn't centered.
     lda @(++ average)   ; average / 256
     tax
-    cmp #desired_average
+    cmp #$40
     beq +j              ; It's already what we want…
     bcc +n
     dec current_low
@@ -177,7 +176,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
 p:  stx $1e00       ; Save as luminance char.
     inc @(++ -p)    ; Step to next pixel.
 
-    jmp play_audio  ; Back to audio…
+    jmp play_audio
 
     ; Start new frame.
 framesync:
@@ -185,6 +184,6 @@ framesync:
     sta @(++ -p)
     jmp play_audio
 
-inversions:     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
 downsamples:    @(maptimes [integer (/ _ 8)] 128)
                 fill 128
+inversions:     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
