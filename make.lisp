@@ -1,7 +1,7 @@
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 
-(defvar *bandwidth* 8)
+(defvar *bandwidth* 12)
 
 (defvar audio_shortest_pulse #x18)
 (defvar audio_longest_pulse #x28)
