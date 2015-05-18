@@ -1,5 +1,5 @@
-(defvar *video?* nil) ;"video.mp4")
-(defvar *video-end* "10")
+(defvar *video?* "video.mp4")
+(defvar *video-end* "20")
 
 (defvar audio_shortest_pulse #x18)
 (defvar audio_longest_pulse #x28)
@@ -72,8 +72,8 @@
           "bender/vic-20/vic.asm"
           "src/main.asm"
           ,@(? *video?*
-              '("src/video/luminance-chars.asm"
-                "src/video/video-player.asm")
+              '("src/video/video-player.asm"
+                "src/video/luminance-chars.asm")
               '("src/audio-player.asm"))
           ,(+ "src/text_" name ".asm"))
         (+ "obj/" name "_" tv ".prg.vice.txt")))
