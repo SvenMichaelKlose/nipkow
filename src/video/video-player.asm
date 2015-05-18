@@ -5,11 +5,11 @@ average = 1
 tleft = 3
 tmp = 4
 
-desired_average = $44
+desired_average = $40
 average_loop_cycles = @(half (+ 4 2 2 3))
 sure_delay = 12
 reset_delay = @(+ average_loop_cycles sure_delay)
-timer = @(- (* 8 audio_longest_pulse) reset_delay)
+timer = @(- (* 8 audio_longest_pulse) 0)
 
 tape_audio_player:
     sei         ; Disable interrupts.
@@ -70,24 +70,21 @@ l:  lda luminances,x
 
 play_audio:
     ; Wait for end of pulse.
-    lda $9121   ; (4) Reset the VIA2 CA1 status bit.
+    lda $9121   ; Reset the VIA2 CA1 status bit.
 l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     lsr         ; (2) Shift to test bit 2.
     lsr         ; (2)
     bcc -l      ; (2/3) Nothing happened yet. Try again…
 
     ; Get sample.
-    lda $9124   ; (4) Read the timer's low byte which is your sample.
-    ldx $9125   ; (4) Read the timer's high byte.
+    ldx $9124   ; (4) Read the timer's low byte which is your sample.
+    lda $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer and acknowledge interrupt.
     bmi framesync
 
     ; Downsample and play.
-    tax
-    lsr         ; (2) Reduce sample from 7 to 4 bits.
-    lsr         ; (2)
-    lsr         ; (2)
-    sta $900e   ; (4) Play it!
+    lda downsamples,x
+    sta $900e
 
     ; Make sum of samples.
     txa
@@ -115,8 +112,8 @@ d:  lda current_low
     sta $9124
 
     ; Divide average by 128 and restart summing up samples.
-j:  txa
-    asl
+    txa
+j:  asl
     sta average
     lda #0
     rol
@@ -126,21 +123,18 @@ j:  txa
 
 play_video:
     ; Wait for end of pulse.
-    lda $9121   ; (4) Reset the VIA2 CA1 status bit.
+    lda $9121   ; Reset the VIA2 CA1 status bit.
 l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     lsr         ; (2) Shift to test bit 2.
     lsr         ; (2)
     bcc -l      ; (2/3) Nothing happened yet. Try again…
 
     ; Get sample.
-    lda $9124   ; (4) Read the timer's low byte which is your sample.
-    ldx $9125   ; (4) Read the timer's high byte.
+    ldx $9124   ; (4) Read the timer's low byte which is your sample.
+    lda $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer.
     bmi framesync
-    sta tmp
-    lsr         ; (2) Reduce sample from 7 to 4 bits.
-    lsr         ; (2)
-    lsr         ; (2)
+    lda downsamples,x
     tax
 
     ; Invert every second luminance value.
@@ -154,49 +148,16 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
 p:  stx $1e00       ; Save as luminance char.
     inc @(++ -p)    ; Step to next pixel.
 
-    ; Make sum of samples.
-    lda tmp
-    clc
-    adc average
-    sta average
-    bcc +n
-    inc @(++ average)
-n:
-
-    ; Check if sum is complete.
-    dec tleft
-    bne play_audio2     ; No, continue with video…
-
-    ; Correct time if average pulse length doesn't match our desired value.
-    lda @(++ average)   ; average / 256
-    tax
-    cmp #desired_average
-    beq +j              ; It's already what we want…
-    bcc +n
-    dec current_low
-    bne +d
-n:  inc current_low
-d:  lda current_low
-    sta $9124
-
-    ; Divide average by 128 and restart summing up samples.
-j:  txa
-    asl
-    sta average
-    lda #0
-    rol
-    sta @(++ average)
-    lda #128
-    sta tleft
-
-play_audio2:
     jmp play_audio  ; Back to audio…
 
+    ; Start new frame.
 framesync:
-    ; Reset pixel pointer.
     lda #0
     sta @(++ -p)
     jmp play_audio
 
 inversions:
     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 0
+
+downsamples:
+@(maptimes [integer (/ _ 16)] 256)
