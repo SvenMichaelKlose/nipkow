@@ -1,10 +1,15 @@
 current_low = 0
 average = 1
 tleft = 3
+luminance_phase = 4
+tmp = 5
 
+;desired_average = $29 ; 41… why? Should be $40.
+desired_average = $40
 average_loop_cycles = @(half (+ 4 2 2 3))
-sure_delay = 7
-timer = @(- (* 8 audio_longest_pulse) average_loop_cycles sure_delay)
+sure_delay = 12
+reset_delay = @(+ average_loop_cycles sure_delay)
+timer = @(- (* 8 audio_longest_pulse) reset_delay)
 
 tape_audio_player:
     sei         ; Disable interrupts.
@@ -14,16 +19,21 @@ tape_audio_player:
     sta $912e
     sta $912d
 
-    ; Set screen dimensions.
-    lda #@(+ 128 16)
+    ; Initialize VIC.
+    lda #8              ; (horizontal origin)
+    sta $9000
+    lda #28             ; (vertical origin)
+    sta $9001
+    lda #@(+ 128 16)    ; (16 screen rows)
     sta $9002
-    lda #@(* 16 2)
+    lda #@(* 16 2);     ; (16 screen columns)
     sta $9003
-    lda #$fd
+    lda #$fd            ; (character set at $1000)
     sta $9005
-    lda #8
+    lda #8              : (black screen and border)
     sta $900f
 
+    ; Set colors to white.
     ldx #0
     lda #white
 l:  sta colors,x
@@ -31,6 +41,7 @@ l:  sta colors,x
     dex
     bne -l
 
+    ; Generate other half of luminance chars.
     ldx #63
     ldy #64
 l:  lda luminances,x
@@ -53,25 +64,26 @@ l:  lda luminances,x
     sta current_low
     ldy #>timer
 
-    ; Play sample.
 play_audio:
+    ; Wait for end of pulse.
     lda $9121   ; (4) Reset the VIA2 CA1 status bit.
 l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     lsr         ; (2) Shift to test bit 2.
     lsr         ; (2)
     bcc -l      ; (2/3) Nothing happened yet. Try again…
 
+    ; Get sample.
     lda $9124   ; (4) Read the timer's low byte which is your sample.
-    ldx $9125   ; (4) Write high byte to restart the timer and acknowledge interrupt.
+    ldx $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer and acknowledge interrupt.
     bmi framesync
+audio_out:
     tax
     lsr         ; (2) Reduce sample from 7 to 4 bits.
     lsr         ; (2)
     lsr         ; (2)
     sta $900e   ; (4) Play it!
 
-update_average:
     ; Make sum of samples.
     txa
     clc
@@ -81,18 +93,19 @@ update_average:
     inc @(++ average)
 n:
 
+    ; Check if sum is complete.
     dec tleft
-    bne play_video
+    bne play_video      ; No, continue with video…
 
     ; Correct time if average pulse length doesn't match our desired value.
 s:  lda @(++ average)   ; average / 256
     tax
-    cmp #$29            ; 41… why? Should be $40.
-    beq +j              ; It's already what we want.
+    cmp #desired_average
+    beq +j              ; It's already what we want…
     bcc +n
-    dec current_low
+    inc current_low
     bne +d
-n:  inc current_low
+n:  dec current_low
 d:  lda current_low
     sta $9124
 
@@ -106,30 +119,46 @@ j:  txa
     lda #128
     sta tleft
 
-    ; Update pixel.
 play_video:
+    ; Wait for end of pulse.
     lda $9121   ; (4) Reset the VIA2 CA1 status bit.
 l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     lsr         ; (2) Shift to test bit 2.
     lsr         ; (2)
     bcc -l      ; (2/3) Nothing happened yet. Try again…
 
+    ; Get sample.
     lda $9124   ; (4) Read the timer's low byte which is your sample.
-    ldx $9125   ; (4) Write high byte to restart the timer.
+    ldx $9125   ; (4) Read the timer's high byte.
     sty $9125   ; (4) Write high byte to restart the timer.
     bmi framesync
+video_out:
     lsr         ; (2) Reduce sample from 7 to 4 bits.
     lsr         ; (2)
     lsr         ; (2)
-p:  lda $1e00   ; Save as luminance char.
-    inc @(+ -p 1) ; Step to next pixel.
-    jmp play_audio ; Back to audio…
+
+    ; Invert every second luminance value.
+    ldx luminance_phase
+    beq +p
+    sta tmp
+    lda #15
+    sec
+    sbc tmp
+
+    ; Draw luminance pixel.
+p:  sta $1e00       ; Save as luminance char.
+    inc @(+ -p 1)   ; Step to next pixel.
+
+    ; Toggle luminance phase.
+    lda luminance_phase
+    eor #1
+    sta luminance_phase
+    jmp play_audio  ; Back to audio…
 
 framesync:
-    cmp #@(- (half (* 8 frame_sync_width)))
-    bcs update_average
-    cmp #@(- (* 8 frame_sync_width))
-    bcc update_average
+    ; Reset pixel pointer.
     lda #0
+    sta luminance_phase
     sta @(+ -p 1)
-    beq play_audio
+    inc $900f
+    jmp play_audio
