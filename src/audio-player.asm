@@ -2,6 +2,7 @@ current_low = 0
 average = 1
 tleft = 3
 
+desired_average = $40
 average_loop_cycles = @(half (+ 4 2 2 3))
 sure_delay = 7
 timer = @(- (* 8 audio_longest_pulse) average_loop_cycles sure_delay)
@@ -50,7 +51,7 @@ n:  dec tleft
     ; Correct time if average pulse length doesn't match our desired value.
 s:  lda @(++ average)   ; average / 256
     tax
-    cmp #@(- 64 average_loop_cycles sure_delay 5)
+    cmp #desired_average
     beq +j              ; It's already what we want.
     bcc +n
     dec current_low
