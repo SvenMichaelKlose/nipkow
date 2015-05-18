@@ -12,7 +12,8 @@ reset_delay = @(+ average_loop_cycles sure_delay)
 timer = @(- (* 8 audio_longest_pulse) reset_delay)
 
 tape_audio_player:
-    sei         ; Disable interrupts.
+    ; Disable interrupts.
+    sei
     lda #$7f
     sta $911e
     sta $911d

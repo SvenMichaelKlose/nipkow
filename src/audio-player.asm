@@ -8,6 +8,14 @@ sure_delay = 7
 timer = @(- (* 8 audio_longest_pulse) average_loop_cycles sure_delay)
 
 tape_audio_player:
+    ; Disable interrupts.
+    sei
+    lda #$7f
+    sta $911e
+    sta $911d
+    sta $912e
+    sta $912d
+
     ; Start tape motor.
     lda $911c
     and #$fd
