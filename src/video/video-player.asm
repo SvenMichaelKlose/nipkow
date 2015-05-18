@@ -9,7 +9,7 @@ desired_average = $40
 average_loop_cycles = @(half (+ 4 2 2 3))
 sure_delay = 12
 reset_delay = @(+ average_loop_cycles sure_delay)
-timer = @(- (* 8 audio_longest_pulse) 0)
+timer = @(- (* 8 audio_longest_pulse) reset_delay)
 
 tape_audio_player:
     sei         ; Disable interrupts.
@@ -28,7 +28,7 @@ tape_audio_player:
     sta $9002
     lda #@(* 16 2);     ; (16 screen columns)
     sta $9003
-    lda #$fd            ; (character set at $1000)
+    lda #$fd            ; (character set at $1400)
     sta $9005
     lda #8              : (black screen and border)
     sta $900f
@@ -46,12 +46,43 @@ l:  sta colors,x
 
     ; Generate other half of luminance chars.
     ldx #63
-    ldy #64
 l:  lda luminances,x
     sta $1400,x
+    lda #0
+    sta $1478,x
+    iny
+    dex
+    bpl -l
+    ldx #55
+    ldy #64
+l:  lda luminances,x
     eor #$ff
+    sta tmp
+    lda #0
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
+    lsr tmp
+    rol
     sta $1400,y
     iny
+    dex
+    bpl -l
+
+    ldx #15
+l:  txa
+    sta screen,x
     dex
     bpl -l
 
@@ -79,7 +110,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     ; Get sample.
     ldx $9124   ; (4) Read the timer's low byte which is your sample.
     lda $9125   ; (4) Read the timer's high byte.
-    sty $9125   ; (4) Write high byte to restart the timer and acknowledge interrupt.
+    sty $9125   ; (4) Restart timer and acknowledge interrupt.
     bmi framesync
 
     ; Downsample and play.
@@ -132,7 +163,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     ; Get sample.
     ldx $9124   ; (4) Read the timer's low byte which is your sample.
     lda $9125   ; (4) Read the timer's high byte.
-    sty $9125   ; (4) Write high byte to restart the timer.
+    sty $9125   ; (4) Restart timer and acknowledge interrupt.
     bmi framesync
     lda downsamples,x
     tax
@@ -140,7 +171,7 @@ l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
     ; Invert every second luminance value.
     lda @(++ +p)
     lsr
-    bcc +p
+    bcs +p
     lda inversions,x
     tax
 
@@ -157,7 +188,7 @@ framesync:
     jmp play_audio
 
 inversions:
-    15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 0
+    15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
 
 downsamples:
-@(maptimes [integer (/ _ 16)] 256)
+@(maptimes [integer (/ _ 8)] 256)
