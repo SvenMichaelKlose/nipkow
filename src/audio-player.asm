@@ -49,7 +49,7 @@ n:  dec tleft
     bne -f
 
     ; Correct time if average pulse length doesn't match our desired value.
-s:  lda @(++ average)   ; average / 256
+    lda @(++ average)   ; average / 256
     tax
     cmp #desired_average
     beq +j              ; It's already what we want.
