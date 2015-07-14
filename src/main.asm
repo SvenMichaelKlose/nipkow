@@ -1,3 +1,6 @@
+screen = $1e00
+colors = $9600
+
 main:
     ; Print text.
 l:  lda @text,x
