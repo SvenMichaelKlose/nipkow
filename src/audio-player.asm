@@ -20,26 +20,26 @@ tape_audio_player:
 
     ; Initialize VIA2 timer 1.
     lda #0
-    sta $912b   ; one-shot mode
+    sta $912b       ; one-shot mode
     lda #<timer
     sta current_low
     ldy #>timer
 
     ; Play.
-f:  lda $9121   ; (4) Reset the VIA2 CA1 status bit.
-l:  lda $912d   ; (4) Read the VIA2 CA1 status bit.
-    lsr         ; (2) Shift to test bit 2.
-    lsr         ; (2)
-    bcc -l      ; (2/3) Nothing happened yet. Try again…
+f:  lda $9121       ; Reset the VIA2 CA1 status bit.
+l:  lda $912d       ; Read the VIA2 CA1 status bit.
+    lsr             ; Shift to test bit 2.
+    lsr
+    bcc -l          ; Nothing happened yet. Try again…
 
-    lda $9124   ; (4) Read the timer's low byte which is your sample.
-    sty $9125   ; (4) Write high byte to restart the timer.
+    lda $9124       ; Read the timer's low byte which is your sample.
+    sty $9125       ; Write high byte to restart the timer.
     tax
-    lsr         ; (2) Reduce sample from 7 to 4 bits.
-    lsr         ; (2)
-    lsr         ; (2)
-    sta $900e   ; (4) Play it!
-    sta $900f   ; (4) Something for the eye.
+    lsr             ; Reduce sample from 7 to 4 bits.
+    lsr
+    lsr
+    sta $900e       ; Play it!
+    sta $900f       ; Something for the eye.
 
     ; Make sum of samples.
     txa
@@ -55,7 +55,7 @@ n:  dec tleft
 
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
-    cmp #$40
+    cmp #@(- #x40 (+ (/ 11 2) 8)) ; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
     beq +j              ; It's already what we want.
     tax
     bcc +n
