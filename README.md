@@ -74,8 +74,8 @@ We need the minimum pulse width to actually output the samples and to
 do the bookkeeping.  More about that later on.
 
 Now for the actual playing. We set the timer to the longest pulse length of
-210.  When the minimum pulse width has passed the timer counted down to
-128.  When the pulse stops a little bit later we get some value from 120
+310.  When the minimum pulse width has passed the timer counted down to
+128.  When the pulse stops a little bit later we get some value from 0
 to 127.  That shifted three bits to the right gives us the sample value 15.
 When the status bit signals that the pulse ended we just read the low byte
 of the timer, immediately reset the timer by writing its high byte, then we
