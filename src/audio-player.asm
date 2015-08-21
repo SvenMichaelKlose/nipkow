@@ -55,7 +55,7 @@ n:  dec tleft
 
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
-    cmp #@(- #x40 (+ (/ 11 2) 8)) ; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
+    cmp #@(- #x40 (+ (/ 11 2) 7)) ; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
     beq +j              ; It's already what we want.
     tax
     bcc +n
