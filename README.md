@@ -1,4 +1,4 @@
-# Overview
+# nipkow – datasette multimedia player
 
 This a real–time multimedia tape player for the unexpanded Commodore
 VIC-20.  It plays pulse–width modulated audio from tape which you may
@@ -13,22 +13,31 @@ isn't avaible from me, yet.
 
 # Download and build on Linux
 
-You'll need at least git and sbcl installed.  Then download
+You'll need at least git, sbcl, mplayer and sox installed.  Then download
 'download-and-build.sh' and execute it.
 
 
 # How it works
 
-This is taken from a posting in the VIC-20 Denial forum at
-http://sleepingelephant.com/denial/
+## Regular encoding
+
+The datasette isn't suited for analog signals.  It can only detect if a
+signal on tape goes low.  Data is encoded by writing pulses that
+position the signal drops in particular distances from each other.  A
+short pulse distance may encode a bit set to 0, a longer pulse may encode a 1.
+There's even hardware support for detecting if a pulse was short or low,
+so you can write interrupt tape loaders without need to worry about timing
+too much.
+
+## Encoding analog samples
 
 The two VIAs have two timers each that count down at the speed of the CPU
 clock.  Timer 2 in each chip has the advantage that it has "latches".  If
 you write the low byte of the timer, it goes into the latch without
-affecting the timer.  As soon as you write the high byte the timer is set
+affecting the timer.  But as soon as you write the high byte the timer is set
 to the written values, counting down.  If you set the timer to 256 on a NTSC
 VIC it'll count down to 0 in 1027270 / 256 = 1/4013s.
-Fortunately, the timers can also be read.
+The timers can also be read.
 
 The VIA can tell you if the signal from tape went low – the end of a
 pulse; that's that status bit.  It has to be reset manually.
@@ -37,7 +46,7 @@ Now, that's all we need.  The recorded pulses look like this:
 
 
           192 cycles       | 128 cycles max.
-    ------------------------0123456789ABCDEF <- sample values for each 8
+    ------------------------FEDCBA9876543210 <- sample values for each 8
     |                      |    variable   |    extra cycles
     | minimum pulse width  |   additional  |
     |                      |     width     |
@@ -52,13 +61,13 @@ Now, that's all we need.  The recorded pulses look like this:
                                     | +     
                                     |+      
                                     +  <- our audio wave
-                                   +|       
-                                  + |       
-                                 +  |       
-                                +   |       
-                                +   |       
-                                 +  |       
-                                  + |       
+                                   +|
+                                  + |
+                                 +  |
+                                +   |
+                                +   |
+                                 +  |
+                                  + |
                                    +|       
 
 We need the minimum pulse width to actually output the samples and to
@@ -72,23 +81,24 @@ When the status bit signals that the pulse ended we just read the low byte
 of the timer, immediately reset the timer by writing its high byte, then we
 shift the value we've just read and output it.
 
+## Staying in tune
+
 That's where the trouble starts.  One cannot assume that all tape drives
 have the same speed and we need some way to adjust the minimum pulse length
 somehow. If we calculate the average value of all samples, we get the sample
-value that lies on the center of our audio wave. The timer should've counted
-down to 64 if the timing was perfect.  (Sure as hell that's only the case in
-VICE.)  If the average timer value is above our desired value, we decrement
+value that lies on the center of our audio wave. The timer should have counted
+down to 64 if the timing was perfect.
+If the average timer value is above our desired value, we decrement
 the longest pulse width or we increment it or we leave it alone when it's
-right. BUT you have to take the time into account that is not measured
-from the point when the status bit isn't yet detected (average loop cycles)
-and the sure time not measured until the timer is restarted. Maybe that's
-why the desired average is 41, not 64.
+right. 
 
 How the average is calculated isn't very obvious since the player isn't
 initialized properly. Since it's self-adjusting it simply doesn't have to
 be.  It sums up the last 256 samples in chunks of 128 to let the former
-averages flow in, so the change would be gradual.  I've no bloody clue
-about mathematics.  It just hit me on the throne and it works.  Might also
-a flaw in this algorithm that skewed the desired average sample.
+averages flow in, so the change would be gradual.
 
-I'm sure that everything will be explained some day.
+## Playing video
+
+Video resolution is 16x16 pixels with 16 grades of luminance.  Audio and
+video samples are simply interleaved.  An extra long pulse tells the player
+to reset the screen pointer and to start over with the following audio pulse.
