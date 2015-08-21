@@ -92,27 +92,30 @@
 (defvar ohne_dich nil)
 (defvar text nil)
 
-(defun make-ohne-dich (name tv)
+(defun make-ohne-dich (name src tv)
   (= *tv* tv)
   (alet (downcase (symbol-name tv))
-    (let tapname (+ "compiled/" name "_" ! ".tap")
-      (make-ohne-dich-prg name !)
-      (make-vice-commands (+ "compiled/" name "_" ! ".vice.txt"))
+    (let tapname (+ "compiled/" src "_" ! ".tap")
+      (make-ohne-dich-prg src !)
+      (make-vice-commands (+ "compiled/" src "_" ! ".vice.txt"))
       (with-output-file o tapname
         (write-tap o
-            (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" name "_" ! ".prg"))))
+            (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "_" ! ".prg"))))
                         name
                         :start #x1001))
         (? *video?*
            (with-input-file video "obj/nipkow.dat"
-             (wav2pwm o (+ "obj/" name "_downsampled_" ! ".wav") video))
-           (wav2pwm o (+ "obj/" name "_downsampled_" ! ".wav"))))
+             (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav") video))
+           (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav"))))
+;      (with-input-file i tapname
+;        (with-output-file o (+ "compiled/" src "_" ! ".tap.wav")
+;          (tap2wav i o)))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
-(make-ohne-dich "ohne_dich" :pal)
-(make-ohne-dich "ohne_dich" :ntsc)
-(make-ohne-dich "mario" :pal)
-(make-ohne-dich "mario" :ntsc)
+(make-ohne-dich "OHNE DICH (PAL)" "ohne_dich" :pal)
+(make-ohne-dich "OHNE DICH (NTSC)" "ohne_dich" :ntsc)
+(make-ohne-dich "MARIO (PAL)" "mario" :pal)
+(make-ohne-dich "MARIO (NTSC)" "mario" :ntsc)
 (print-pwm-info)
 
 (defun tap-rate (tv avg-len)
