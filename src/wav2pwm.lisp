@@ -19,7 +19,9 @@
   (integer (+ (half (- 16 range)) (* (/ x 16) range))))
 
 (defun wav2pwm (out in-file &optional video)
-  (alet (fetch-file in-file)
+  (alet (+ (list-string (maptimes [identity audio_average_pulse] 16000))
+           (fetch-file in-file)
+           (list-string (maptimes [identity audio_average_pulse] 16000)))
     (dotimes (i (length !))
       (unless (zero? (mod i 2))
         (let sample (unclip (/ (unsigned (elt ! i)) 16) *bandwidth*)
