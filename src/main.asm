@@ -1,6 +1,12 @@
 screen = $1e00
 colors = $9600
 
+current_low     = 0
+average         = 1
+tleft           = 3
+old_irq         = 4
+
+
 main:
     ; Print text.
 l:  lda @text,x

@@ -1,5 +1,8 @@
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
+(defvar *irq?* t)
+(defvar *nipkow-disable-interrupts?* t)
+(defvar *nipkow-fx-border?* t)
 
 (defvar *bandwidth* 12)
 
@@ -7,6 +10,7 @@
 (defvar audio_longest_pulse #x28)
 (defvar frame_sync_width #x40)
 (defvar audio_pulse_width (- audio_longest_pulse audio_shortest_pulse))
+(defvar audio_average_pulse (+ audio_shortest_pulse (half audio_pulse_width)))
 
 (defvar *pulse-short* #x20)
 (defvar *pulse-long* #x40)
@@ -68,7 +72,7 @@
 
 (defun make (to files cmds)
   (apply #'assemble-files to files)
-  (make-vice-commands cmds "break .framesync"))
+  (make-vice-commands cmds "break .stop"))
 
 (defun make-ohne-dich-prg (name tv)
   (make (+ "obj/" name "_" tv ".prg")
@@ -78,7 +82,9 @@
           ,@(? *video?*
               '("src/video/video-player.asm"
                 "src/video/luminance-chars.asm")
-              '("src/audio-player.asm"))
+              (? *irq?*
+                 '("src/audio-player-irq.asm")
+                 '("src/audio-player-noirq.asm")))
           ,(+ "src/text_" name ".asm"))
         (+ "obj/" name "_" tv ".prg.vice.txt")))
 
