@@ -3,6 +3,7 @@
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
 (defvar *nipkow-fx-border?* t)
+(defvar *mario-pal-only?* nil)
 
 (defvar *bandwidth* 12)
 
@@ -22,14 +23,12 @@
   (format t "Generating frame images of video ~A with mplayer…~%" *video?*)
   (| (file-exists? *video?*)
      (error "Couldn't find *VIDEO?* ~A." *video?*))
-  (when nil
   (sb-ext:run-program "/usr/bin/mplayer"
                       `("-ao" "dummy"
                         "-vo" "pnm"
                         "-vf" "scale=64:48"
                         "-endpos" ,*video-end*
                         ,*video?*))
-  )
   (format t "Generating tape frames…~%")
   (make-nipkow-dat-test "obj/nipkow.dat" "."))
 
@@ -67,14 +66,15 @@
   (make-conversion name :pal)
   (make-conversion name :ntsc))
 
-(make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "4" "-56")
+(unless *mario-pal-only?*
+  (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "4" "-56"))
 (make-audio "mario" "media/mario.flv" "4" "-56")
 
 (defun make (to files cmds)
   (apply #'assemble-files to files)
   (make-vice-commands cmds "break .stop"))
 
-(defun make-ohne-dich-prg (name tv)
+(defun make-audio-player-prg (name tv)
   (make (+ "obj/" name "_" tv ".prg")
         `("bender/vic-20/basic-loader.asm"
           "bender/vic-20/vic.asm"
@@ -98,11 +98,11 @@
 (defvar ohne_dich nil)
 (defvar text nil)
 
-(defun make-ohne-dich (name src tv)
+(defun make-audio-player (name src tv)
   (= *tv* tv)
   (alet (downcase (symbol-name tv))
     (let tapname (+ "compiled/" src "_" ! ".tap")
-      (make-ohne-dich-prg src !)
+      (make-audio-player-prg src !)
       (make-vice-commands (+ "compiled/" src "_" ! ".vice.txt"))
       (with-output-file o tapname
         (write-tap o
@@ -118,10 +118,13 @@
 ;          (tap2wav i o)))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
-(make-ohne-dich "OHNE DICH (PAL)" "ohne_dich" :pal)
-(make-ohne-dich "OHNE DICH (NTSC)" "ohne_dich" :ntsc)
-(make-ohne-dich "MARIO (PAL)" "mario" :pal)
-(make-ohne-dich "MARIO (NTSC)" "mario" :ntsc)
+(unless *mario-pal-only?*
+  (make-audio-player "OHNE DICH (PAL)" "ohne_dich" :pal)
+  (make-audio-player "OHNE DICH (NTSC)" "ohne_dich" :ntsc))
+(make-audio-player "MARIO (PAL)" "mario" :pal)
+(unless *mario-pal-only?*
+  (make-audio-player "MARIO (NTSC)" "mario" :ntsc))
+
 (print-pwm-info)
 
 (defun tap-rate (tv avg-len)
