@@ -18,10 +18,10 @@
 (defun unclip (x range)
   (integer (+ (half (- 16 range)) (* (/ x 16) range))))
 
-(defun wav2pwm (out in-file &optional video)
-  (alet (+ (list-string (maptimes [identity audio_average_pulse] 16000))
+(defun wav2pwm (out in-file &key video (pause-before 16000) (pause-after 16000))
+  (alet (+ (list-string (maptimes [identity audio_average_pulse] pause-before))
            (fetch-file in-file)
-           (list-string (maptimes [identity audio_average_pulse] 16000)))
+           (list-string (maptimes [identity audio_average_pulse] pause-after)))
     (dotimes (i (length !))
       (unless (zero? (mod i 2))
         (let sample (unclip (/ (unsigned (elt ! i)) 16) *bandwidth*)
