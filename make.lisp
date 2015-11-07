@@ -1,3 +1,5 @@
+(= *model* :vic-20)
+
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 (defvar *irq?* t)
