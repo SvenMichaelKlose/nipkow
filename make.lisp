@@ -37,8 +37,8 @@
 (defun make-wav (name file gain bass)
   (format t "Generating uncompressed audio for ~A of file ~A with mplayer…~%" name file)
   (sb-ext:run-program "/usr/bin/mplayer"
-                      `(;"-vo" "null"
-                        ;"-vc" "null"
+                      `("-vo" "null"
+                        "-vc" "null"
                         ,@(& *video?* `("-endpos" ,*video-end*))
                         "-ao" ,(+ "pcm:fast:file=obj/" name ".wav")
                         ,file))
