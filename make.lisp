@@ -1,5 +1,7 @@
 (= *model* :vic-20)
 
+(load "bender/vic-20/cpu-cycles.lisp")
+
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 (defvar *irq?* t)
@@ -115,9 +117,9 @@
            (with-input-file video "obj/nipkow.dat"
              (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav") video))
            (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav"))))
-;      (with-input-file i tapname
-;        (with-output-file o (+ "compiled/" src "_" ! ".tap.wav")
-;          (tap2wav i o)))
+      (with-input-file i tapname
+        (with-output-file o (+ "compiled/" src "_" ! ".tap.wav")
+          (tap2wav i o 48000 (cpu-cycles *tv*))))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (unless *mario-pal-only?*
