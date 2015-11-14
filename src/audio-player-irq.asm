@@ -1,5 +1,12 @@
 ; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
 restart_delay = @(+ (half (+ 4 3 3)) 8)
+
+;TODO: Get down to the reasons of the odd restart delay values also in the non–IRQ player.
+;irq_break_delay = @(half 3)
+;irq_delay = 7
+;irq_handler_delay = 29
+;restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
+
 timer = @(- (* 8 audio_longest_pulse) restart_delay)
 
 tape_audio_player:
@@ -8,6 +15,22 @@ tape_audio_player:
     sta $911e
     sta $912e
     sta $912d
+
+    ; Boost digital audio with distorted HF carrier.
+    lda #$0f
+    sta $900e
+    ldx #$7e
+    stx $900c
+    ldy #0
+l:  dey
+    bne -l
+    lda #$fe
+    stx $900c
+    stx $900c
+    sta $900c
+    sta $900c
+    stx $900c
+    sta $900c
 
     ; Start tape motor.
     lda $911c
