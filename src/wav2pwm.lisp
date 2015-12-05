@@ -8,9 +8,9 @@
               (* 8 (+ audio_shortest_pulse (half audio_pulse_width))))))
 
 (defun print-pwm-info ()
-  (format t "Audio resolution: ~A cycles~%" (* 8 audio_pulse_width))
-  (format t "~A pulses per second (PAL).~%" (pwm-pulse-rate :pal))
-  (format t "~A pulses per second (NTSC).~%" (pwm-pulse-rate :ntsc)))
+  (format t "Nipkow player audio resolution: ~A cycles~%" (* 8 audio_pulse_width))
+  (format t " ~A Hz (NTSC)~%" (pwm-pulse-rate :ntsc))
+  (format t " ~A Hz (PAL)~%" (pwm-pulse-rate :pal)))
 
 (defun unsigned (x)
   (+ x (? (< 127 x) -128 128)))
