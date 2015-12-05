@@ -29,14 +29,15 @@
                 (< 15 sample))
              (error "Sample ~A." sample))
           (let pulse (+ audio_shortest_pulse sample)
-            (princ (code-char pulse) out)))
+            (write-byte pulse out)))
         (when (& *video?*
-                 (peek-char video))
-          (princ (read-char video) out))))))
+                 (read-byte video))
+          (write-byte video out))))))
 
+; XXX Not used anywhere.
 (defun wav42pwm (out in-file)
   (alet (fetch-file in-file)
     (dotimes (i (length !))
       (alet (elt ! i)
-        (princ (code-char (+ audio_shortest_pulse (>> ! 4))) out)
-        (princ (code-char (+ audio_shortest_pulse (bit-and ! 15))) out)))))
+        (write-byte (+ audio_shortest_pulse (>> ! 4)) out)
+        (write-byte (+ audio_shortest_pulse (bit-and ! 15)) out)))))
