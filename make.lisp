@@ -36,7 +36,7 @@
   (format t "Generating tape frames…~%")
   (make-nipkow-dat-test "obj/nipkow.dat" "."))
 
-(defun make-wav (name file gain bass)
+(defun make-wav (name tv file gain bass)
   (format t "Generating uncompressed audio for ~A of file ~A with mplayer…~%" name file)
   (sb-ext:run-program "/usr/bin/mplayer"
                       `("-vo" "null"
@@ -49,7 +49,7 @@
                       `(,(+ "obj/" name ".wav")
                         ,(+ "obj/" name "_filtered.wav")
                         "bass" ,bass
-                        "lowpass" "2000"
+                        "lowpass" ,(princ (half (pwm-pulse-rate tv)) nil)
                         "compand" "0.3,1" "6:-70,-60,-20" "-1" "-90" "0.2"
                         "gain" ,gain)))
 
@@ -66,8 +66,9 @@
                           ,!))))
 
 (defun make-audio (name file gain bass)
-  (make-wav name file gain bass)
+  (make-wav name :pal file gain bass)
   (make-conversion name :pal)
+  (make-wav name :ntsc file gain bass)
   (make-conversion name :ntsc))
 
 (unless *mario-pal-only?*
