@@ -1,20 +1,18 @@
-; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
-restart_delay = @(+ (half (+ 4 3 3)) 8)
-
-;TODO: Get down to the reasons of the odd restart delay values also in the non–IRQ player.
-;irq_break_delay = @(half 3)
-;irq_delay = 7
-;irq_handler_delay = 29
-;restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
+irq_break_delay = @(half 3)
+irq_delay = 7
+irq_handler_delay = 29
+restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
 
 timer = @(- (* 8 audio_longest_pulse) restart_delay)
 
 tape_audio_player:
+if @*nipkow-disable-interrupts?*
     sei
     lda #$7f
     sta $911e
     sta $912e
     sta $912d
+end
 
     ; Boost digital audio with distorted HF carrier.
     lda #$0f
@@ -44,7 +42,7 @@ l:  dey
     sta $315
 
     ; Initialise VIA2 Timer 1 (cassette tape read).
-    lda #<timer     ; Cycles to count down.
+    lda #<timer
     sta current_low
     sta $9124
     lda #>timer
@@ -52,8 +50,6 @@ l:  dey
 
     lda #%00000000  ; One-shot mode.
     sta $912b
-
-    ; Initialize VIA2 tape pulse IRQ.
     lda #%10000010  ; CA1 IRQ enable (tape pulse)
     sta $912e
 
@@ -66,8 +62,16 @@ play_audio_sample:
     ldy #>timer
     sty $9125       ; Write high byte to restart the timer.
 
+    ; Clip sample.
     tax
-    lsr             ; Reduce sample from 7 to 4 bits.
+    bpl +n
+    cmp #196
+    bcc +s
+    lda #0
+    beq +n
+s:  lda #127
+
+n:  lsr             ; Reduce sample from 7 to 4 bits.
     lsr
     lsr
     sta $900e       ; Play it!
@@ -82,15 +86,14 @@ end
     sta average
     bcc +n
     inc @(++ average)
-    bne +done
 
 n:  dec tleft
     bne +done
 
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
-    cmp #@(- #x40 restart_delay)
-    beq +j              ; It's already what we want.
+    cmp #$3f
+    beq +done           ; It's already what we want.
     tax
     bcc +n
     dec current_low
@@ -98,16 +101,9 @@ n:  dec tleft
 n:  inc current_low
 d:  lda current_low
     sta $9124
-
-    ; Divide average by 128 and restart summing up samples.
-    txa
-j:  asl
-    sta average
     lda #0
-    rol
+    sta average
     sta @(++ average)
-    lda #128
-    sta tleft
 
 done:
     lda #$7f
