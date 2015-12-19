@@ -43,7 +43,7 @@
   (format t "Filtering and companding ~A with sox…~%" name)
   (sb-ext:run-program "/usr/bin/sox"
                       `(,(+ "obj/" name ".wav")
-                        ,(+ "obj/" name "_filtered.wav")
+                        ,(+ "obj/" name ".filtered.wav")
                         "bass" ,bass
                         "lowpass" ,(princ (half (pwm-pulse-rate tv)) nil)
                         "compand" "0.3,1" "6:-70,-60,-20" "-1" "-90" "0.2"
@@ -51,9 +51,9 @@
 
 (defun make-conversion (name tv)
   (format t "Downsampling ~A with sox…~%" name)
-  (alet (+ "obj/" name "_downsampled_" (downcase (symbol-name tv)) ".wav")
+  (alet (+ "obj/" name ".downsampled." (downcase (symbol-name tv)) ".wav")
     (sb-ext:run-program "/usr/bin/sox"
-                        `(,(+ "obj/" name "_filtered.wav")
+                        `(,(+ "obj/" name ".filtered.wav")
                           "-c" "1"
                           "-b" "16"
                           "-r" ,(princ (/ (pwm-pulse-rate tv)
@@ -76,7 +76,7 @@
   (make-vice-commands cmds "break .stop"))
 
 (defun make-audio-player-prg (name tv)
-  (make (+ "obj/" name "_" tv ".prg")
+  (make (+ "obj/" name "." tv ".prg")
         `("bender/vic-20/basic-loader.asm"
           "bender/vic-20/vic.asm"
           "src/main.asm"
@@ -87,7 +87,7 @@
                  '("src/audio-player-irq.asm")
                  '("src/audio-player-noirq.asm")))
           ,(+ "src/text_" name ".asm"))
-        (+ "obj/" name "_" tv ".prg.vice.txt")))
+        (+ "obj/" name "." tv ".prg.vice.txt")))
 
 (defun padding (x n obj)
   (maptimes [identity obj] (- n (length x))))
@@ -102,20 +102,20 @@
 (defun make-audio-player (name src tv)
   (= *tv* tv)
   (alet (downcase (symbol-name tv))
-    (let tapname (+ "compiled/" src "_" ! ".tap")
+    (let tapname (+ "compiled/" src "." ! ".tap")
       (make-audio-player-prg src !)
-      (make-vice-commands (+ "compiled/" src "_" ! ".vice.txt"))
       (with-output-file o tapname
         (write-tap o
-            (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "_" ! ".prg"))))
+            (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "." ! ".prg"))))
                         name
                         :start #x1001))
-        (? *video?*
-           (with-input-file video "obj/nipkow.dat"
-             (wav2pwm o (fetch-file (+ "obj/" src "_downsampled_" ! ".wav")) video))
-           (wav2pwm o (fetch-file (+ "obj/" src "_downsampled_" ! ".wav")))))
+        (alet (fetch-file (+ "obj/" src ".downsampled." ! ".wav"))
+          (? *video?*
+             (with-input-file video "obj/nipkow.dat"
+               (wav2pwm o ! video))
+             (wav2pwm o !))))
       (with-input-file i tapname
-        (with-output-file o (+ "compiled/" src "_" ! ".tap.wav")
+        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
           (tap2wav i o 48000 (cpu-cycles *tv*))))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
