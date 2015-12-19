@@ -9,17 +9,13 @@
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
 
-(defvar *bandwidth* 12)
-
+(defvar *bandwidth* 16)
 (defvar audio_shortest_pulse #x18)
 (defvar audio_longest_pulse #x28)
 (defvar frame_sync_width #x40)
 (defvar audio_pulse_width (- audio_longest_pulse audio_shortest_pulse))
 (defvar audio_average_pulse (+ audio_shortest_pulse (half audio_pulse_width)))
 
-(defvar *pulse-short* #x20)
-(defvar *pulse-long* #x40)
-(defvar *tape-pulse* (* 8 (+ *pulse-short* (half (- *pulse-long* *pulse-short*)))))
 (load "src/wav2pwm.lisp")
 (load "src/make-nipkow-dat.lisp")
 
@@ -72,7 +68,7 @@
   (make-conversion name :ntsc))
 
 (unless *mario-pal-only?*
-  (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "4" "-56"))
+  (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "3" "-56"))
 (make-audio "mario" "media/mario.flv" "4" "-56")
 
 (defun make (to files cmds)
@@ -116,8 +112,8 @@
                         :start #x1001))
         (? *video?*
            (with-input-file video "obj/nipkow.dat"
-             (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav") video))
-           (wav2pwm o (+ "obj/" src "_downsampled_" ! ".wav"))))
+             (wav2pwm o (fetch-file (+ "obj/" src "_downsampled_" ! ".wav")) video))
+           (wav2pwm o (fetch-file (+ "obj/" src "_downsampled_" ! ".wav")))))
       (with-input-file i tapname
         (with-output-file o (+ "compiled/" src "_" ! ".tap.wav")
           (tap2wav i o 48000 (cpu-cycles *tv*))))
@@ -131,17 +127,5 @@
   (make-audio-player "MARIO (NTSC)" "mario" :ntsc))
 
 (print-pwm-info)
-
-(defun tap-rate (tv avg-len)
-  ; XXX Need INTEGER here because tré's FRACTION-CHARS is buggered.
-  (integer (/ (? (eq tv :pal)
-                 +cpu-cycles-pal+
-                 +cpu-cycles-ntsc+)
-              (* 8 avg-len))))
-
-(alet (+ *pulse-short* (half (- *pulse-long* *pulse-short*)))
-  (format t "Baud rates: ~A (NTSC), ~A (PAL)~%"
-          (tap-rate :ntsc !) (tap-rate :pal !)))
 (format t "Done. See directory 'compiled/'.~%")
-
 (quit)

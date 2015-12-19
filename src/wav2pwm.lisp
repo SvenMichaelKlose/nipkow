@@ -1,6 +1,6 @@
 (load "bender/vic-20/cpu-cycles.lisp")
 
-(defun pwm-pulse-rate (tv)
+(defun pwm-pulse-rate (tv &key (shortest audio_shortest_pulse) (width audio_pulse_width))
   ; XXX Need INTEGER here because tré's FRACTION-CHARS is buggered.
   (integer (/ (? (eq tv :pal)
                  +cpu-cycles-pal+
@@ -18,12 +18,12 @@
 (defun unclip (x range)
   (integer (+ (half (- 16 range)) (* (/ x 16) range))))
 
-(defun wav2pwm (out in-file &key video (pause-before 16000) (pause-after 16000))
+(defun wav2pwm (out samples &key video (pause-before 16000) (pause-after 16000))
   (alet (+ (list-string (maptimes [identity audio_average_pulse] pause-before))
-           (fetch-file in-file)
+           samples
            (list-string (maptimes [identity audio_average_pulse] pause-after)))
     (dotimes (i (length !))
-      (unless (zero? (mod i 2))
+      (unless (zero? (mod i 2)) ; Convert from 16 bits to 8 bits.
         (let sample (unclip (/ (unsigned (elt ! i)) 16) *bandwidth*)
           (& (| (< sample 0)
                 (< 15 sample))
