@@ -5,7 +5,7 @@ current_low     = 0
 average         = 1
 tleft           = 3
 old_irq         = 4
-
+tmp             = 6
 
 main:
     ; Print text.
