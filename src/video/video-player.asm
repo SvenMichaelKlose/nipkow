@@ -1,11 +1,12 @@
 ; nipkow – Copyright (c) 2015 Sven Michael Klose <pixel@hugbox.org>
 
-current_low = 0
-average = 1
-tleft = 3
-tmp = 4
+;current_low = 0
+;average = 1
+;tleft = 3
+;tmp = 4
 
-timer = @(* 8 audio_longest_pulse)
+restart_delay = @(+ (half (+ 4 3 3)) 8)
+timer = @(- (* 8 audio_longest_pulse) restart_delay)
 
 tape_audio_player:
     ; Disable interrupts.
@@ -110,7 +111,8 @@ l:  lda $912d       ; Read the VIA2 CA1 status bit.
     ldx $9124       ; Read the timer's low byte which is your sample.
     lda $9125       ; Read the timer's high byte.
     sty $9125       ; Restart timer and acknowledge interrupt.
-    bmi framesync
+    bmi framesync_a
+no_framesync_a:
 
     ; Downsample and play.
     lda downsamples,x
@@ -131,9 +133,8 @@ n:
 
     ; Adjust timer if average pulse length isn't centered.
     lda @(++ average)   ; average / 256
-    cmp #$40
+    cmp #$3f
     beq +j              ; It's already what we want…
-    tax
     bcc +n
     dec current_low
     bne +d
@@ -141,15 +142,9 @@ n:  inc current_low
 d:  lda current_low
     sta $9124
 
-    ; Divide average by 128 and restart summing up samples.
-    txa
-j:  asl
+j:  lda #0
     sta average
-    lda #0
-    rol
     sta @(++ average)
-    lda #128
-    sta tleft
 
 play_video:
     ; Wait for end of pulse.
@@ -163,8 +158,8 @@ l:  lda $912d       ; Read the VIA2 CA1 status bit.
     ldx $9124       ; Read the timer's low byte which is your sample.
     lda $9125       ; Read the timer's high byte.
     sty $9125       ; Restart timer and acknowledge interrupt.
-    bmi framesync
-    stx tmp
+    bmi framesync_b
+no_framesync_b:
     lda downsamples,x
     tax
 
@@ -179,48 +174,21 @@ l:  lda $912d       ; Read the VIA2 CA1 status bit.
 p:  stx $1e00       ; Save as luminance char.
     inc @(++ -p)    ; Step to next pixel.
 
-    ; Make sum of samples.
-    lda tmp
-    clc
-    adc average
-    sta average
-    bcc +n
-    inc @(++ average)
-n:
-
-    ; Check if sum is complete.
-    dec tleft
-    bne play_audio2     ; No, continue with video…
-
-    ; Adjust timer if average pulse length isn't centered.
-    lda @(++ average)   ; average / 256
-    cmp #$40
-    beq +j              ; It's already what we want…
-    tax
-    bcc +n
-    dec current_low
-    bne +d
-n:  inc current_low
-d:  lda current_low
-    sta $9124
-
-    ; Divide average by 128 and restart summing up samples.
-    txa
-j:  asl
-    sta average
-    lda #0
-    rol
-    sta @(++ average)
-    lda #128
-    sta tleft
-
     jmp play_audio
+
+framesync_a:
+    cpx #$f0
+    bcc no_framesync_a
+    bcs framesync
+
+framesync_b:
+    cpx #$f0
+    bcc no_framesync_b
 
     ; Start new frame.
 framesync:
     lda #0
     sta @(++ -p)
-play_audio2:
     jmp play_audio
 
 downsamples:    @(maptimes [integer (/ _ 8)] 128)
