@@ -7,7 +7,7 @@
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
 (defvar *nipkow-fx-border?* t)
-(defvar *mario-pal-only?* t)
+(defvar *mario-pal-only?* nil)
 
 (defvar *bandwidth* 16)
 (defvar audio_shortest_pulse #x18)
@@ -33,14 +33,16 @@
   (make-nipkow-dat-test "obj/nipkow.dat" "."))
 
 (defun make-wav (name tv file gain bass)
-  (format t "Generating uncompressed audio for ~A of file ~A with mplayer…~%" name file)
+  (format t "Generating uncompressed audio for ~A (~A) of file ~A with mplayer…~%"
+          name (symbol-name tv) file)
   (sb-ext:run-program "/usr/bin/mplayer"
                       `("-vo" "null"
                         "-vc" "null"
                         ,@(& *video?* `("-endpos" ,*video-end*))
                         "-ao" ,(+ "pcm:fast:file=obj/" name ".wav")
                         ,file))
-  (format t "Filtering and companding ~A with sox…~%" name)
+  (format t "Filtering and companding ~A (~A) with sox…~%"
+          name (symbol-name tv))
   (sb-ext:run-program "/usr/bin/sox"
                       `(,(+ "obj/" name ".wav")
                         ,(+ "obj/" name ".filtered.wav")
@@ -50,7 +52,7 @@
                         "gain" ,gain)))
 
 (defun make-conversion (name tv)
-  (format t "Downsampling ~A with sox…~%" name)
+  (format t "Downsampling ~A (~A) with sox…~%" name (symbol-name tv))
   (alet (+ "obj/" name ".downsampled." (downcase (symbol-name tv)) ".wav")
     (sb-ext:run-program "/usr/bin/sox"
                         `(,(+ "obj/" name ".filtered.wav")
