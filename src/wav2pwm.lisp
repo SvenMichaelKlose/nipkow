@@ -18,21 +18,19 @@
 (defun unclip (x range)
   (integer (+ (half (- 16 range)) (* (/ x 16) range))))
 
-(defun wav2pwm (out samples &key video (pause-before 16000) (pause-after 16000))
-  (alet (+ (list-string (maptimes [identity audio_average_pulse] pause-before))
-           samples
-           (list-string (maptimes [identity audio_average_pulse] pause-after)))
-    (dotimes (i (length !))
-      (unless (zero? (mod i 2)) ; Convert from 16 bits to 8 bits.
-        (let sample (unclip (/ (unsigned (elt ! i)) 16) *bandwidth*)
-          (& (| (< sample 0)
-                (< 15 sample))
-             (error "Sample ~A." sample))
-          (let pulse (+ audio_shortest_pulse sample)
-            (write-byte pulse out)))
-        (when (& *video?*
-                 (read-byte video))
-          (write-byte video out))))))
+(defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000))
+  (adotimes 44 (read-byte in))
+  (adotimes pause-before
+    (write-byte audio_average_pulse out))
+  (awhile (read-word in)
+          nil
+    (let sample (bit-xor (>> ! 12) 8)
+      (write-byte (+ audio_shortest_pulse sample) out))
+    (when (& *video?*
+             (read-byte video))
+      (write-byte video out)))
+  (adotimes pause-after
+    (write-byte audio_average_pulse out)))
 
 ; XXX Not used anywhere.
 (defun wav42pwm (out in-file)

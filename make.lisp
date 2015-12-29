@@ -7,7 +7,7 @@
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
 (defvar *nipkow-fx-border?* t)
-(defvar *mario-pal-only?* nil)
+(defvar *mario-pal-only?* t)
 
 (defvar *bandwidth* 16)
 (defvar audio_shortest_pulse #x18)
@@ -109,11 +109,11 @@
             (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "." ! ".prg"))))
                         name
                         :start #x1001))
-        (alet (fetch-file (+ "obj/" src ".downsampled." ! ".wav"))
+        (with-input-file i (+ "obj/" src ".downsampled." ! ".wav")
           (? *video?*
              (with-input-file video "obj/nipkow.dat"
-               (wav2pwm o ! video))
-             (wav2pwm o !))))
+               (wav2pwm o i video))
+             (wav2pwm o i))))
       (with-input-file i tapname
         (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
           (tap2wav i o 48000 (cpu-cycles *tv*))))
