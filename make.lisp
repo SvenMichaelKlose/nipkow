@@ -70,7 +70,7 @@
   (make-conversion name :ntsc))
 
 (unless *mario-pal-only?*
-  (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "3" "-56"))
+  (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "0" "-56"))
 (make-audio "mario" "media/mario.flv" "4" "-56")
 
 (defun make (to files cmds)
