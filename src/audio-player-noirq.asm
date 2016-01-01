@@ -45,11 +45,14 @@ f:  lda $9121       ; Reset the VIA2 CA1 status bit.
 l:  lda $912d       ; Read the VIA2 CA1 status bit.
     beq -l
 
-    lda $9124       ; Read the timer's low byte which is your sample.
+    ldx $9124       ; Read the timer's low byte which is your sample.
     sty $9125       ; Write high byte to restart the timer.
 
+    asl
+    bmi -l          ; Tape must have been stopped.
+
     ; Clip sample.
-    tax
+    txa
     bpl +n
     cmp #196
     bcc +s
