@@ -10,7 +10,6 @@ To record the TAPs on real cassettes you should use a real machine that
 writes the tape or the signal will be degraded.  Software to do this
 isn't avaible from me, yet.
 
-
 # Download and build on Linux
 
 You'll need at least git, sbcl, mplayer and sox installed.  Then download
@@ -87,17 +86,12 @@ That's where the trouble starts.  One cannot assume that all tape drives
 have the same speed and we need some way to adjust the minimum pulse length
 somehow. If we calculate the average value of all samples, we get the sample
 value that lies on the center of our audio wave. The timer should have counted
-down to 64 if the timing was perfect.
-If the average timer value is above our desired value, we decrement
-the longest pulse width or we increment it or we leave it alone when it's
-right. 
+down to 63 if the timing was perfect.  The average is calculated by summing up
+256 samples and then using just the high byte of the sum.  If the average
+timer value is above our desired value, we decrement the longest pulse width
+or we increment it or we leave it alone when it's right.
 
-How the average is calculated isn't very obvious since the player isn't
-initialized properly. Since it's self-adjusting it simply doesn't have to
-be.  It sums up the last 256 samples in chunks of 128 to let the former
-averages flow in, so the change would be gradual.
-
-## Playing video
+## Playing video (UNFINISHED!)
 
 Video resolution is 16x16 pixels with 16 grades of luminance.  Audio and
 video samples are simply interleaved.  An extra long pulse tells the player
