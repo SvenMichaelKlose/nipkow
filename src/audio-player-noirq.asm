@@ -1,5 +1,5 @@
 ; Minus half of VIA CA1 status bit test loop cycles and instructions to reinit.
-restart_delay = @(+ (half (+ 4 3 3)) 8)
+restart_delay = @(+ (half (+ 4 3)) 8)
 timer = @(- (* 8 audio_longest_pulse) restart_delay)
 
 tape_audio_player:
@@ -43,7 +43,6 @@ l:  dey
     ; Play.
 f:  lda $9121       ; Reset the VIA2 CA1 status bit.
 l:  lda $912d       ; Read the VIA2 CA1 status bit.
-    and #2
     beq -l
 
     lda $9124       ; Read the timer's low byte which is your sample.
