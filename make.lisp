@@ -13,7 +13,6 @@
 (defvar *bandwidth* 16)
 (defvar frame_sync_width #x40)
 
-(load "src/wav2pwm.lisp")
 (load "src/convert.lisp")
 (load "src/make-nipkow-dat.lisp")
 
@@ -32,10 +31,8 @@
 
 (defun make-audio (name file gain bass)
   (nipkow-make-wav name file)
-  (nipkow-make-filtered-wav name gain bass :pal *nipkow-pulse-rate*)
-  (nipkow-make-conversion name :pal *nipkow-pulse-rate*)
-  (nipkow-make-filtered-wav name gain bass :ntsc *nipkow-pulse-rate*)
-  (nipkow-make-conversion name :ntsc *nipkow-pulse-rate*))
+  (nipkow-convert name gain bass :pal *nipkow-pulse-rate*)
+  (nipkow-convert name gain bass :ntsc *nipkow-pulse-rate*))
 
 (unless *mario-pal-only?*
   (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "0" "-56"))
