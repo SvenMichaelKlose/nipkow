@@ -9,14 +9,12 @@
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
 
+(defvar *nipkow-pulse-rate* 4400)
 (defvar *bandwidth* 16)
-(defvar audio_shortest_pulse #x18)
-(defvar audio_longest_pulse #x28)
 (defvar frame_sync_width #x40)
-(defvar audio_pulse_width (- audio_longest_pulse audio_shortest_pulse))
-(defvar audio_average_pulse (+ audio_shortest_pulse (half audio_pulse_width)))
 
 (load "src/wav2pwm.lisp")
+(load "src/convert.lisp")
 (load "src/make-nipkow-dat.lisp")
 
 (when *video?*
@@ -32,42 +30,12 @@
   (format t "Generating tape frames…~%")
   (make-nipkow-dat-test "obj/nipkow.dat" "."))
 
-(defun make-wav (name tv file gain bass)
-  (format t "Generating uncompressed audio for ~A (~A) of file ~A with mplayer…~%"
-          name (symbol-name tv) file)
-  (sb-ext:run-program "/usr/bin/mplayer"
-                      `("-vo" "null"
-                        "-vc" "null"
-                        ,@(& *video?* `("-endpos" ,*video-end*))
-                        "-ao" ,(+ "pcm:fast:file=obj/" name ".wav")
-                        ,file))
-  (format t "Filtering and companding ~A (~A) with sox…~%"
-          name (symbol-name tv))
-  (sb-ext:run-program "/usr/bin/sox"
-                      `(,(+ "obj/" name ".wav")
-                        ,(+ "obj/" name ".filtered.wav")
-                        "bass" ,bass
-                        "lowpass" ,(princ (half (pwm-pulse-rate tv)) nil)
-                        "compand" "0.3,1" "6:-70,-60,-20" "-1" "-90" "0.2"
-                        "gain" ,gain)))
-
-(defun make-conversion (name tv)
-  (format t "Downsampling ~A (~A) with sox…~%" name (symbol-name tv))
-  (alet (+ "obj/" name ".downsampled." (downcase (symbol-name tv)) ".wav")
-    (sb-ext:run-program "/usr/bin/sox"
-                        `(,(+ "obj/" name ".filtered.wav")
-                          "-c" "1"
-                          "-b" "16"
-                          "-r" ,(princ (/ (pwm-pulse-rate tv)
-                                          (? *video?* 2 1))
-                                       nil)
-                          ,!))))
-
 (defun make-audio (name file gain bass)
-  (make-wav name :pal file gain bass)
-  (make-conversion name :pal)
-  (make-wav name :ntsc file gain bass)
-  (make-conversion name :ntsc))
+  (nipkow-make-wav name file)
+  (nipkow-make-filtered-wav name gain bass :pal *nipkow-pulse-rate*)
+  (nipkow-make-conversion name :pal *nipkow-pulse-rate*)
+  (nipkow-make-filtered-wav name gain bass :ntsc *nipkow-pulse-rate*)
+  (nipkow-make-conversion name :ntsc *nipkow-pulse-rate*))
 
 (unless *mario-pal-only?*
   (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "0" "-56"))
@@ -128,6 +96,5 @@
 (unless *mario-pal-only?*
   (make-audio-player "MARIO (NTSC)" "mario" :ntsc))
 
-(print-pwm-info)
 (format t "Done. See directory 'compiled/'.~%")
 (quit)

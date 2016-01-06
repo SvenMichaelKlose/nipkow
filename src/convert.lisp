@@ -1,9 +1,9 @@
-(defun make-wav (name file)
+(defun nipkow-make-wav (name file)
   (sb-ext:run-program "/usr/bin/mplayer"
     (list "-vo" "null" "-vc" "null" "-ao" (+ "pcm:fast:file=obj/" name ".wav") file)
     :pty cl:*standard-output*))
 
-(defun make-filtered-wav (name gain bass tv rate)
+(defun nipkow-make-filtered-wav (name gain bass tv rate)
   (sb-ext:run-program "/usr/bin/sox"
     `(,(+ "obj/" name ".wav")
       ,(+ "obj/" name "." (downcase (symbol-name tv)) ".filtered.wav")
@@ -15,7 +15,7 @@
 (defun downsampled-audio-name (name tv)
   (+ "obj/" name ".downsampled." (downcase (symbol-name tv)) ".wav"))
 
-(defun make-conversion (name tv rate)
+(defun nipkow-make-conversion (name tv rate)
   (sb-ext:run-program "/usr/bin/sox"
     (list (+ "obj/" name "." (downcase (symbol-name tv)) ".filtered.wav")
           "-c" "1"

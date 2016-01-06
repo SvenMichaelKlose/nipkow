@@ -7,7 +7,7 @@
                     (string-list !) (string-list ".ppm")))))
 
 (defun frame-sync (out)
-  (princ (code-char (+ audio_longest_pulse frame_sync_width)) out))
+  (princ (code-char (+ (nipkow-longest-pulse) frame_sync_width)) out))
 
 (defun downscale-frame (!)
   (with-queue q
@@ -47,7 +47,7 @@
     (let phase nil
       (dolist (i x)
         (princ (code-char (alet (unclip (* 16 (/ (- i min) (- max min))) *bandwidth*)
-                            (prog1 (+ audio_shortest_pulse
+                            (prog1 (+ (nipkow-shortest-pulse)
                                       (? phase
                                          !
                                          (- 15 !)))

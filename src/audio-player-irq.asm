@@ -3,7 +3,7 @@ irq_delay = 7
 irq_handler_delay = 29
 restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
 
-timer = @(- (* 8 audio_longest_pulse) restart_delay)
+timer = @(- (* 8 (nipkow-longest-pulse)) restart_delay)
 
 tape_audio_player:
 if @*nipkow-disable-interrupts?*
