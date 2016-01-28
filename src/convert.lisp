@@ -54,6 +54,19 @@
     (adotimes pause-after
       (write-byte average out))))
 
+(defun wav42pwm (out in &key video (pause-before 16000) (pause-after 16000))
+  (adotimes 96 (read-byte in))
+  (with (shortest  (nipkow-shortest-pulse)
+         average   (nipkow-average-pulse))
+    (adotimes pause-before
+      (write-byte average out))
+    (awhile (read-byte in)
+            nil
+      (write-byte (+ shortest (bit-xor (>> ! 4) 8)) out)
+      (write-byte (+ shortest (bit-xor (bit-and ! 15) 8)) out))
+    (adotimes pause-after
+      (write-byte average out))))
+
 (defun nipkow-convert (name gain bass tv rate &key video (pause-before 16000) (pause-after 16000))
   (nipkow-make-filtered-wav name gain bass tv rate)
   (nipkow-make-conversion name tv rate))
