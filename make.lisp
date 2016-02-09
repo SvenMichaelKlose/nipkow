@@ -81,9 +81,10 @@
              (with-input-file video "obj/nipkow.dat"
                (wav2pwm o i video))
              (wav2pwm o i))))
-      (with-input-file i tapname
-        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
-          (tap2wav i o 48000 (cpu-cycles *tv*))))
+; XXX Too inaccurate to make working cassettes.
+;      (with-input-file i tapname
+;        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
+;          (tap2wav i o 48000 (cpu-cycles *tv*))))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (unless *mario-pal-only?*
