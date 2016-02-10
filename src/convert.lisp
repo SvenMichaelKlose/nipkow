@@ -1,5 +1,3 @@
-(load "bender/vic-20/cpu-cycles.lisp")
-
 (defun nipkow-make-wav (name file)
   (sb-ext:run-program "/usr/bin/mplayer"
     (list "-vo" "null" "-vc" "null" "-ao" (+ "pcm:fast:file=obj/" name ".wav") file)
