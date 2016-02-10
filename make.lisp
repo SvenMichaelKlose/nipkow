@@ -7,6 +7,7 @@
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
 (defvar *make-test-pulses?* nil)
+(defvar *tape-wav-sine?* t)
 
 (defvar *nipkow-pulse-rate* 4400)
 (defvar *bandwidth* 16)
@@ -87,7 +88,7 @@
              (wav2pwm o i))))
       (with-input-file i tapname
         (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
-          (tap2wav i o 44100 (cpu-cycles *tv*))))
+          (tap2wav i o 44100 (cpu-cycles *tv*) :sine? *tape-wav-sine?*)))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (unless *mario-pal-only?*
