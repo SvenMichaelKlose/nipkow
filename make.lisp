@@ -1,13 +1,12 @@
 (= *model* :vic-20)
 
-(load "bender/vic-20/cpu-cycles.lisp")
-
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
+(defvar *make-test-pulses?* nil)
 
 (defvar *nipkow-pulse-rate* 4400)
 (defvar *bandwidth* 16)
@@ -77,14 +76,18 @@
                         name
                         :start #x1001))
         (with-input-file i (+ "obj/" src ".downsampled." ! ".wav")
+          (when *make-test-pulses?*
+            (dotimes (j 8)
+              (adotimes ((half *nipkow-pulse-rate*))
+                (write-byte (+ (nipkow-shortest-pulse) j) o)
+                (write-byte (- (nipkow-longest-pulse) j) o))))
           (? *video?*
              (with-input-file video "obj/nipkow.dat"
                (wav2pwm o i video))
              (wav2pwm o i))))
-; XXX Too inaccurate to make working cassettes.
-;      (with-input-file i tapname
-;        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
-;          (tap2wav i o 48000 (cpu-cycles *tv*))))
+      (with-input-file i tapname
+        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
+          (tap2wav i o 44100 (cpu-cycles *tv*))))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (unless *mario-pal-only?*
