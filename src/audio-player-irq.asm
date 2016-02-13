@@ -94,7 +94,6 @@ n:  dec tleft
     lda @(++ average)   ; average / 256
     cmp #$3f
     beq +done           ; It's already what we want.
-    tax
     bcc +n
     dec current_low
     bne +d
