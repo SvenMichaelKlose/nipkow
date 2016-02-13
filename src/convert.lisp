@@ -36,15 +36,17 @@
 (defun nipkow-longest-pulse ()
   (+ (nipkow-average-pulse) 8))
 
-(defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000))
-  (adotimes 44 (read-byte in))
+(defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000) (skip-first 0))
+  (= (stream-track-input-location? in) nil)
+  (adotimes ((+ 44 skip-first))
+    (read-byte in))
   (with (shortest  (nipkow-shortest-pulse)
          average   (nipkow-average-pulse))
     (adotimes pause-before
       (write-byte average out))
     (awhile (read-word in)
             nil
-      (let sample (bit-xor (>> ! 12) 8)
+      (let sample (bit-xor (>> (unclip ! *bandwidth*) 12) 8)
         (write-byte (+ shortest sample) out))
       (& *video?*
          (read-byte video)
@@ -53,6 +55,7 @@
       (write-byte average out))))
 
 (defun wav42pwm (out in &key video (pause-before 16000) (pause-after 16000))
+  (= (stream-track-input-location? in) nil)
   (adotimes 96 (read-byte in))
   (with (shortest  (nipkow-shortest-pulse)
          average   (nipkow-average-pulse))
