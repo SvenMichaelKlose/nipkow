@@ -25,7 +25,7 @@
     :pty cl:*standard-output*))
 
 (defun unclip (x range)
-  (integer (+ (half (- 16 range)) (* (/ x 16) range))))
+  (integer (number+ (half (- 16 range)) (* (/ x 16) range))))
 
 (defun nipkow-average-pulse ()
   (integer (/ (cpu-cycles *tv*) *nipkow-pulse-rate* 8)))
@@ -34,11 +34,13 @@
   (- (nipkow-average-pulse) 8))
 
 (defun nipkow-longest-pulse ()
-  (+ (nipkow-average-pulse) 8))
+  (number+ (nipkow-average-pulse) 8))
 
 (defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000) (skip-first 0))
+  (format t "Converting WAV to 4–bit PWM. Skipped: ~A, before ~A, after ~A~%"
+            skip-first pause-before pause-after)
   (= (stream-track-input-location? in) nil)
-  (adotimes ((+ 44 skip-first))
+  (adotimes ((number+ 44 skip-first))
     (read-byte in))
   (with (shortest  (nipkow-shortest-pulse)
          average   (nipkow-average-pulse))
@@ -47,7 +49,7 @@
     (awhile (read-word in)
             nil
       (let sample (bit-xor (>> (unclip ! *bandwidth*) 12) 8)
-        (write-byte (+ shortest sample) out))
+        (write-byte (number+ shortest sample) out))
       (& *video?*
          (read-byte video)
         (write-byte video out)))
@@ -63,8 +65,8 @@
       (write-byte average out))
     (awhile (read-byte in)
             nil
-      (write-byte (+ shortest (bit-xor (>> ! 4) 8)) out)
-      (write-byte (+ shortest (bit-xor (bit-and ! 15) 8)) out))
+      (write-byte (number+ shortest (bit-xor (>> ! 4) 8)) out)
+      (write-byte (number+ shortest (bit-xor (bit-and ! 15) 8)) out))
     (adotimes pause-after
       (write-byte average out))))
 
