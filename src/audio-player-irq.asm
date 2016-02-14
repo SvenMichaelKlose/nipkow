@@ -44,6 +44,8 @@ l:  dey
     ; Initialise VIA2 Timer 1 (cassette tape read).
     lda #<timer
     sta current_low
+    lda #>timer
+    sta current_high
     sta $9124
     lda #>timer
     sta $9125
@@ -59,7 +61,7 @@ w:  bne -w
 
 play_audio_sample:
     lda $9124       ; Read the timer's low byte which is your sample.
-    ldy #>timer
+    ldy current_high
     sty $9125       ; Write high byte to restart the timer.
 
     ; Clip sample.
@@ -96,8 +98,14 @@ n:  dec tleft
     beq +done           ; It's already what we want.
     bcc +n
     dec current_low
+    lda current_low
+    cmp #$ff
     bne +d
+    dec current_high
+    jmp +d
 n:  inc current_low
+    bne +d
+    inc current_high
 d:  lda current_low
     sta $9124
     lda #0

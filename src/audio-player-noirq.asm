@@ -82,14 +82,22 @@ n:  dec tleft
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
     cmp #$3f
-    beq -f              ; It's already what we want.
-    tax
+    beq +done           ; It's already what we want.
     bcc +n
     dec current_low
+    lda current_low
+    cmp #$ff
     bne +d
+    dec current_high
+    jmp +d
 n:  inc current_low
+    bne +d
+    inc current_high
 d:  lda current_low
     sta $9124
+    lda #0
+    sta average
+    sta @(++ average)
 
     lda #0
     sta average

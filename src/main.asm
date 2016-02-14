@@ -2,10 +2,11 @@ screen = $1e00
 colors = $9600
 
 current_low     = 0
-average         = 1
-tleft           = 3
-old_irq         = 4
-tmp             = 6
+current_high    = 1
+average         = 2
+tleft           = 4
+old_irq         = 5
+tmp             = 7
 
 main:
     ; Print text.
