@@ -6,10 +6,10 @@
 (defvar *nipkow-disable-interrupts?* t)
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
-(defvar *make-test-pulses?* nil)
+(defvar *make-test-pulses?* t)
 (defvar *tape-wav-sine?* t)
 
-(defvar *nipkow-pulse-rate* 4400)
+(defvar *nipkow-pulse-rate* 6000)
 (defvar *bandwidth* 16)
 (defvar frame_sync_width #x40)
 
@@ -76,19 +76,23 @@
             (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "." ! ".prg"))))
                         name
                         :start #x1001))
+        (when *make-test-pulses?*
+          (adotimes *nipkow-pulse-rate*
+            (write-byte (nipkow-average-pulse) o))
+          (dotimes (j 8)
+            (adotimes ((half *nipkow-pulse-rate*))
+              (write-byte (+ (nipkow-shortest-pulse) j) o)
+              (write-byte (- (nipkow-longest-pulse) j) o))))
         (with-input-file i (+ "obj/" src ".downsampled." ! ".wav")
-          (when *make-test-pulses?*
-            (dotimes (j 8)
-              (adotimes ((half *nipkow-pulse-rate*))
-                (write-byte (+ (nipkow-shortest-pulse) j) o)
-                (write-byte (- (nipkow-longest-pulse) j) o))))
+          (= (stream-track-input-location? i) nil)
           (? *video?*
              (with-input-file video "obj/nipkow.dat"
+               (= (stream-track-input-location? video) nil)
                (wav2pwm o i video))
              (wav2pwm o i))))
-      (with-input-file i tapname
-        (with-output-file o (+ "compiled/" src "." ! ".tap.wav")
-          (tap2wav i o 44100 (cpu-cycles *tv*) :sine? *tape-wav-sine?*)))
+      (with-io i tapname
+               o (+ "compiled/" src "." ! ".tap.wav")
+        (tap2wav i o 44100 (cpu-cycles *tv*) :sine? *tape-wav-sine?*))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (unless *mario-pal-only?*
