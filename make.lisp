@@ -7,7 +7,6 @@
 (defvar *nipkow-fx-border?* t)
 (defvar *mario-pal-only?* nil)
 (defvar *make-test-pulses?* t)
-(defvar *tape-wav-sine?* t)
 
 (defvar *nipkow-pulse-rate* 6000)
 (defvar *bandwidth* 16)
@@ -15,6 +14,12 @@
 
 (load "src/convert.lisp")
 (load "src/make-nipkow-dat.lisp")
+
+(defun make-model-detection ()                                                  
+  (make "obj/model-detection.bin"
+        '("src/models.asm"
+          "src/model-detection.asm")
+        "obj/model-detection.vice.txt"))
 
 (when *video?*
   (format t "Generating frame images of video ~A with mplayer…~%" *video?*)
@@ -36,7 +41,7 @@
 
 (unless *mario-pal-only?*
   (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "0" "-56"))
-(make-audio "mario" "media/mario.flv" "4" "-56")
+(make-audio "mario" "media/mario.flv" "3" "-56")
 
 (defun make (to files cmds)
   (apply #'assemble-files to files)
@@ -74,7 +79,8 @@
       (with-output-file o tapname
         (write-tap o
             (bin2cbmtap (cddr (string-list (fetch-file (+ "obj/" src "." ! ".prg"))))
-                        name
+                        (+ (padded-name name)
+                           (fetch-file "obj/model-detection.bin"))
                         :start #x1001))
         (when *make-test-pulses?*
           (adotimes *nipkow-pulse-rate*
@@ -92,9 +98,10 @@
              (wav2pwm o i))))
       (with-io i tapname
                o (+ "compiled/" src "." ! ".tap.wav")
-        (tap2wav i o 44100 (cpu-cycles *tv*) :sine? *tape-wav-sine?*))
+        (tap2wav i o 44100 (cpu-cycles *tv*)))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
+(make-model-detection)
 (unless *mario-pal-only?*
   (make-audio-player "OHNE DICH (PAL)" "ohne_dich" :pal)
   (make-audio-player "OHNE DICH (NTSC)" "ohne_dich" :ntsc))

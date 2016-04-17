@@ -1,3 +1,5 @@
+main = $351
+
 screen = $1e00
 colors = $9600
 
@@ -8,7 +10,8 @@ tleft           = 4
 old_irq         = 5
 tmp             = 7
 
-main:
+    org $120c
+
     ; Print text.
 l:  lda @text,x
     beq +n
