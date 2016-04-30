@@ -36,20 +36,23 @@
 (defun nipkow-longest-pulse ()
   (number+ (nipkow-average-pulse) 8))
 
-(defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000) (skip-first 0))
+(defun wav2pwm (out in &key video (pause-before 16000) (pause-after 16000) (skip-first 0) (invert? nil))
   (format t "Converting WAV to 4–bit PWM. Skipped: ~A, before ~A, after ~A~%"
             skip-first pause-before pause-after)
   (= (stream-track-input-location? in) nil)
   (adotimes ((number+ 44 skip-first))
     (read-byte in))
   (with (shortest  (nipkow-shortest-pulse)
-         average   (nipkow-average-pulse))
+         average   (nipkow-average-pulse)
+         inv?      nil)
     (adotimes pause-before
       (write-byte average out))
     (awhile (read-word in)
             nil
       (let sample (bit-xor (>> (unclip ! *bandwidth*) 12) 8)
-        (write-byte (number+ shortest sample) out))
+        (write-byte (number+ shortest (? inv? (- 15 sample) sample)) out))
+      (& invert?
+         (toggle inv?))
       (& *video?*
          (read-byte video)
         (write-byte video out)))

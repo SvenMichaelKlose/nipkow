@@ -1,19 +1,31 @@
 (= *model* :vic-20)
 
+(defvar *tunes*         '(:mario))
+(defvar *tv-standards*  '(:pal ))
+;(defvar *tunes*         '(:ohne-dich :mario))
+;(defvar *tv-standards*  '(:pal :ntsc))
+
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
-(defvar *nipkow-fx-border?* t)
-(defvar *mario-pal-only?* nil)
+(defvar *nipkow-fx-border?* nil)
 (defvar *make-test-pulses?* t)
+(defvar *make-wav?* t)
+(defvar *nipkow-inversions?* t)
 
-(defvar *nipkow-pulse-rate* 6000)
+(defvar *nipkow-pulse-rate* 5000)
 (defvar *bandwidth* 16)
 (defvar frame_sync_width #x40)
 
 (load "src/convert.lisp")
 (load "src/make-nipkow-dat.lisp")
+
+(defun tune? (x)
+  (member x *tunes*))
+
+(defun tv-standard? (x)
+  (member x *tv-standards*))
 
 (defun make-model-detection ()                                                  
   (make "obj/model-detection.bin"
@@ -39,9 +51,10 @@
   (nipkow-convert name gain bass :pal *nipkow-pulse-rate*)
   (nipkow-convert name gain bass :ntsc *nipkow-pulse-rate*))
 
-(unless *mario-pal-only?*
+(when (tune? :ohne-dich)
   (make-audio "ohne_dich" (| *video?* "media/ohne_dich.mp3") "0" "-56"))
-(make-audio "mario" "media/mario.flv" "3" "-56")
+(when (tune? :mario)
+  (make-audio "mario" "media/mario.flv" "3" "-56"))
 
 (defun make (to files cmds)
   (apply #'assemble-files to files)
@@ -68,7 +81,7 @@
   (list-string (+ (string-list x) (padding x 16 #\ ))))
 
 (defvar *tv* nil)
-(defvar ohne_dich nil)
+;(defvar ohne_dich nil)
 (defvar text nil)
 
 (defun make-audio-player (name src tv)
@@ -86,28 +99,42 @@
           (adotimes *nipkow-pulse-rate*
             (write-byte (nipkow-average-pulse) o))
           (dotimes (j 8)
-            (adotimes ((half *nipkow-pulse-rate*))
-              (write-byte (+ (nipkow-shortest-pulse) j) o)
-              (write-byte (- (nipkow-longest-pulse) j) o))))
+            (adotimes ((quarter *nipkow-pulse-rate*))
+              (? *nipkow-inversions?*
+                 (progn
+                   (write-byte (+ (nipkow-shortest-pulse) j) o)
+                   (write-byte (- (nipkow-longest-pulse) j) o)
+                   (write-byte (+ (nipkow-shortest-pulse) j) o)
+                   (write-byte (- (nipkow-longest-pulse) j) o))
+                 (progn
+                   (write-byte (+ (nipkow-shortest-pulse) j) o)
+                   (write-byte (+ (nipkow-shortest-pulse) j) o)
+                   (write-byte (- (nipkow-longest-pulse) j) o)
+                   (write-byte (- (nipkow-longest-pulse) j) o))))))
         (with-input-file i (+ "obj/" src ".downsampled." ! ".wav")
           (= (stream-track-input-location? i) nil)
           (? *video?*
              (with-input-file video "obj/nipkow.dat"
                (= (stream-track-input-location? video) nil)
-               (wav2pwm o i video))
-             (wav2pwm o i))))
-      (with-io i tapname
-               o (+ "compiled/" src "." ! ".tap.wav")
-        (tap2wav i o 44100 (cpu-cycles *tv*)))
+               (wav2pwm o i video :invert? *nipkow-inversions?*))
+             (wav2pwm o i :invert? *nipkow-inversions?*))))
+      (when *make-wav?*
+        (with-io i tapname
+                 o (+ "compiled/" src "." ! ".tap.wav")
+          (tap2wav i o 44100 (cpu-cycles *tv*))))
       (sb-ext:run-program "/usr/bin/zip" (list (+ tapname ".zip") tapname)))))
 
 (make-model-detection)
-(unless *mario-pal-only?*
-  (make-audio-player "OHNE DICH (PAL)" "ohne_dich" :pal)
-  (make-audio-player "OHNE DICH (NTSC)" "ohne_dich" :ntsc))
-(make-audio-player "MARIO (PAL)" "mario" :pal)
-(unless *mario-pal-only?*
-  (make-audio-player "MARIO (NTSC)" "mario" :ntsc))
+(when (tune? :ohne-dich)
+  (when (tv-standard? :pal)
+    (make-audio-player "OHNE DICH (PAL)" "ohne_dich" :pal))
+  (when (tv-standard? :ntsc)
+    (make-audio-player "OHNE DICH (NTSC)" "ohne_dich" :ntsc)))
+(when (tune? :mario)
+  (when (tv-standard? :pal)
+    (make-audio-player "MARIO (PAL)" "mario" :pal))
+  (when (tv-standard? :ntsc)
+    (make-audio-player "MARIO (NTSC)" "mario" :ntsc)))
 
 (format t "Done. See directory 'compiled/'.~%")
 (quit)

@@ -65,7 +65,7 @@ play_audio_sample:
     sty $9125       ; Write high byte to restart the timer.
 
     ; Clip sample.
-    tax
+    pha
     bpl +n
     cmp #196
     bcc +s
@@ -76,13 +76,25 @@ s:  lda #127
 n:  lsr             ; Reduce sample from 7 to 4 bits.
     lsr
     lsr
-    sta $900e       ; Play it!
+
+if @*nipkow-inversions?*
+    tax
+    inc do_invert
+    lda do_invert
+    lsr
+    bcc +j
+    txa
+    jmp +m
+j:  lda inversions,x
+end
+
+m:  sta $900e       ; Play it!
 if @*nipkow-fx-border?*
     sta $900f       ; Something for the eye.
 end
 
     ; Make sum of samples.
-    txa
+    pla
     clc
     adc average
     sta average
@@ -95,7 +107,7 @@ n:  dec tleft
     ; Correct time if average pulse length doesn't match our desired value.
     lda @(++ average)   ; average / 256
     cmp #$3f
-    beq +done           ; It's already what we want.
+    beq +r              ; It's already what we want.
     bcc +n
     dec current_low
     lda current_low
@@ -106,9 +118,11 @@ n:  dec tleft
 n:  inc current_low
     bne +d
     inc current_high
+
 d:  lda current_low
     sta $9124
-    lda #0
+
+r:  lda #0
     sta average
     sta @(++ average)
 
@@ -116,3 +130,6 @@ done:
     lda #$7f
     sta $912d
     jmp $eb18
+
+inversions:
+    15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0

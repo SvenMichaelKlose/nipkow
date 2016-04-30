@@ -9,6 +9,7 @@ average         = 2
 tleft           = 4
 old_irq         = 5
 tmp             = 7
+do_invert       = 8
 
     org $120c
 
