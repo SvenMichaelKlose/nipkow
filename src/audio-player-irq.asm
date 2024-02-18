@@ -44,10 +44,9 @@ l:  dey
     ; Initialise VIA2 Timer 1 (cassette tape read).
     lda #<timer
     sta current_low
-    lda #>timer
-    sta current_high
     sta $9124
     lda #>timer
+    sta current_high
     sta $9125
 
     lda #%00000000  ; One-shot mode.
@@ -57,21 +56,17 @@ l:  dey
 
     ; Let the IRQ handler do everthing.
     cli
-w:  bne -w
+    clv
+w:  lda $900e
+    sta $900e
+    bvc -w
 
 play_audio_sample:
     lda $9124       ; Read the timer's low byte which is your sample.
     ldy current_high
     sty $9125       ; Write high byte to restart the timer.
 
-    ; Clip sample.
     pha
-    bpl +n
-    cmp #196
-    bcc +s
-    lda #0
-    beq +n
-s:  lda #127
 
 n:  lsr             ; Reduce sample from 7 to 4 bits.
     lsr
@@ -90,7 +85,10 @@ end
 
 m:  sta $900e       ; Play it!
 if @*nipkow-fx-border?*
-    sta $900f       ; Something for the eye.
+;    sta $900f       ; Something for the eye.
+    clc
+    adc #$03
+    sta $9000
 end
 
     ; Make sum of samples.

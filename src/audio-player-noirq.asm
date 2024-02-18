@@ -69,7 +69,7 @@ if @*nipkow-inversions?*
     lsr
     bcc +j
     txa
-    jmp +m
+    bcs +m  ; (jmp)
 j:  lda inversions,x
 end
 
@@ -112,7 +112,7 @@ d:  lda current_low
 r:  lda #0
     sta average
     sta @(++ average)
-    beq -f
+    beq -f  ; (jmp)
 
 inversions:
     15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 9

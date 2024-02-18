@@ -3,7 +3,7 @@
 This a real–time multimedia tape player for the unexpanded Commodore
 VIC-20.  It plays pulse–width modulated audio from tape which you may
 stop, resume, rewind or fast-forward like a regular music cassette.
-Its output is roughly four bits at ~&kHz sampling rate.
+Its output is roughly four bits at 4-6kHz sampling rate.
 
 To make tapes audio recording equipment is required.
 

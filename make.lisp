@@ -1,20 +1,21 @@
 (= *model* :vic-20)
 
-(defvar *tunes*         '(:mario))
-(defvar *tv-standards*  '(:pal ))
-;(defvar *tunes*         '(:ohne-dich :mario))
-;(defvar *tv-standards*  '(:pal :ntsc))
+(defvar *tv* :pal)
+;(defvar *tunes*         '(:mario))
+;(defvar *tv-standards*  '(:pal ))
+(defvar *tunes*         '(:ohne-dich :mario))
+(defvar *tv-standards*  '(:pal :ntsc))
 
 (defvar *video?* nil) ;"video.mp4")
 (defvar *video-end* "20")
 (defvar *irq?* t)
 (defvar *nipkow-disable-interrupts?* t)
-(defvar *nipkow-fx-border?* nil)
+(defvar *nipkow-fx-border?* t)
 (defvar *make-test-pulses?* t)
-(defvar *make-wav?* t)
+(defvar *make-wav?* nil)
 (defvar *nipkow-inversions?* t)
 
-(defvar *nipkow-pulse-rate* 5000)
+(defvar *nipkow-pulse-rate* 4000)
 (defvar *bandwidth* 16)
 (defvar frame_sync_width #x40)
 
@@ -38,7 +39,8 @@
   (| (file-exists? *video?*)
      (error "Couldn't find *VIDEO?* ~A." *video?*))
   (sb-ext:run-program "/usr/bin/mplayer"
-                      `("-ao" "dummy"
+                      `("-really-quiet"
+                        "-ao" "dummy"
                         "-vo" "pnm"
                         "-vf" "scale=64:48"
                         "-endpos" ,*video-end*
@@ -80,7 +82,6 @@
 (defun padded-name (x)
   (list-string (+ (string-list x) (padding x 16 #\ ))))
 
-(defvar *tv* nil)
 ;(defvar ohne_dich nil)
 (defvar text nil)
 
